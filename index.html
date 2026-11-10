@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Luyện nói">
 <meta name="theme-color" content="#0f6e6e">
 <meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root {
     --bg: #f4f6f8; --card: #ffffff; --ink: #1c2530; --muted: #66727f; --line: #dde3ea;
@@ -102,6 +105,12 @@
   .msg small { display: block; font-size: 11px; color: var(--muted); }
   #log.hide-ai .msg.ai span { filter: blur(6px); cursor: pointer; }
   #log.hide-ai .msg.ai.show span { filter: none; }
+  .stats { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: -4px 0 12px; }
+  .stats span { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+  .stats b { color: var(--brand); }
+  .wrap.locked .stats { display: none; }
+  label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin-top: 12px; }
+  label.check input { width: 18px; height: 18px; }
   .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 10px; }
 
   .fix { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; margin: 10px 0; }
@@ -119,6 +128,7 @@
 <body>
 <div class="wrap">
   <h1>Luyện nói tiếng Anh</h1>
+  <div id="stats" class="stats hidden"></div>
 
   <div class="card hidden" id="lockCard">
     <h2>Nhập mật khẩu</h2>
@@ -159,7 +169,17 @@
           <option value="fast">Nhanh như người bản xứ</option>
         </select>
       </div>
+      <div>
+        <label for="correctSel">Sửa lỗi</label>
+        <select id="correctSel">
+          <option value="auto" selected>Theo chế độ học</option>
+          <option value="now">Sửa ngay từng lỗi</option>
+          <option value="major">Chỉ sửa lỗi lớn</option>
+          <option value="end">Không sửa, xem ở tổng kết</option>
+        </select>
+      </div>
     </div>
+    <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
     <label for="topic">Chủ đề muốn luyện hôm nay (không bắt buộc)</label>
     <input type="text" id="topic" maxlength="300" placeholder="Ví dụ: explaining a CTO PCI strategy, ordering food, my hometown…">
     <div id="bootMsg" class="alert"></div>
@@ -174,6 +194,8 @@
     <div class="tools hidden" id="tools">
       <button id="muteBtn" title="Tạm tắt micro">Tắt micro</button>
       <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
+      <button id="slowBtn" title="Nhờ nói lại câu vừa rồi, chậm hơn">Nói chậm lại</button>
+      <button id="transBtn" title="Nhờ dịch câu vừa rồi sang tiếng Việt">Dịch câu vừa rồi</button>
       <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
       <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
     </div>
@@ -301,6 +323,21 @@
 
   // ------------------------------------------------------------ màn hình chính
 
+  function renderStats(st) {
+    var box = $('stats');
+    box.innerHTML = '';
+    if (!st || !st.sessions) { box.classList.add('hidden'); return; }
+    [[st.streak, st.streak > 0 ? 'ngày liên tiếp' : 'ngày liên tiếp — hôm nay luyện để bắt đầu chuỗi mới'],
+     [st.weekMinutes, 'phút trong 7 ngày qua'], [st.sessions, 'buổi đã học'], [st.vocab, 'từ trong sổ']].forEach(function (p) {
+      var s = document.createElement('span'), b = document.createElement('b');
+      b.textContent = p[0];
+      s.appendChild(b);
+      s.appendChild(document.createTextNode(' ' + p[1]));
+      box.appendChild(s);
+    });
+    box.classList.remove('hidden');
+  }
+
   function modeById(id) {
     return boot.modes.filter(function (m) { return m.id === id; })[0] || null;
   }
@@ -391,6 +428,15 @@
     } catch (e) {}
     voiceSel.onchange = function () { try { localStorage.setItem('voice', voiceSel.value); } catch (e) {} };
     speedSel.onchange = function () { try { localStorage.setItem('speed', speedSel.value); } catch (e) {} };
+    var correctSel = $('correctSel'), searchChk = $('searchChk');
+    try {
+      var sc = localStorage.getItem('correct');
+      if (sc && correctSel.querySelector('option[value="' + sc + '"]')) correctSel.value = sc;
+      searchChk.checked = localStorage.getItem('search') === '1';
+    } catch (e) {}
+    correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
+    searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
+    renderStats(b.stats);
     if (b.teacherName) {
       teacherName = b.teacherName;
       document.querySelector('h1').textContent = 'Luyện nói tiếng Anh với ' + teacherName;
@@ -577,7 +623,16 @@
     if (msg.setupComplete) {
       S.ready = true;
       S.retries = 0;
-      if (!S.started) { S.started = true; sendText(S.kickoff); }
+      if (!S.started) {
+        S.started = true;
+        if (S.searchDropped) {
+          var note = document.createElement('div');
+          note.className = 'empty';
+          note.textContent = 'Không bật được tra cứu Google ở gói hiện tại; buổi này chạy không có tra cứu.';
+          el.log.appendChild(note);
+        }
+        sendText(S.kickoff);
+      }
       refreshStatus();
       return;
     }
@@ -609,7 +664,13 @@
   function reconnect() {
     if (!S || S.ending) return;
     S.retries = (S.retries || 0) + 1;
-    if (S.retries > 4 || !S.started) {
+    // Tra Google là tính năng thử nghiệm: nếu phiên không mở được khi có nó thì thử lại một lần không có.
+    var dropSearch = !S.started && S.setup && S.setup.setup.tools;
+    if (dropSearch) {
+      delete S.setup.setup.tools;
+      S.searchDropped = true;
+    }
+    if (!dropSearch && (S.retries > 4 || !S.started)) {
       stopPlayback();
       setStatus('Mất kết nối', 'bad', (S.started ? 'Bấm "Kết thúc" để lưu và xem tổng kết phần đã học.' :
         'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') + '. Kiểm tra LIVE_MODEL trong sheet Config và hạn mức gói miễn phí.'));
@@ -662,6 +723,12 @@
 
   el.muteBtn.addEventListener('click', function () { if (S && !(S.prepLeft > 0)) setMuted(!S.muted); });
   el.reviewBtn.addEventListener('click', function () { sendText('review'); });
+  $('slowBtn').addEventListener('click', function () {
+    sendText('Please say your last sentences again, more slowly and clearly, then continue.');
+  });
+  $('transBtn').addEventListener('click', function () {
+    sendText('Please translate what you just said into Vietnamese, briefly, then continue in English.');
+  });
 
   // Che chữ của giáo viên để luyện nghe; chạm vào một câu để hiện riêng câu đó.
   function setHideAi(on) {
@@ -720,7 +787,8 @@
     setMascot('think');
 
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
-      voice: $('voiceSel').value, speed: $('speedSel').value };
+      voice: $('voiceSel').value, speed: $('speedSel').value,
+      correct: $('correctSel').value, search: $('searchChk').checked };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -788,7 +856,7 @@
     server('finishSession', payload).then(function (res) {
       renderSummary(res);
       setStatus(res.saved ? 'Đã lưu buổi học' : 'Chưa lưu được buổi học', res.saved ? 'listen' : 'bad', '');
-      return server('getBootstrap', auth).then(function (b) { if (!b.locked) renderRecent(b.recent); });
+      return server('getBootstrap', auth).then(function (b) { if (!b.locked) { renderRecent(b.recent); renderStats(b.stats); } });
     }).catch(function (e) {
       setStatus('Lỗi khi lưu buổi học', 'bad', e && e.message || String(e));
     }).then(setIdleButton);

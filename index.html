@@ -118,7 +118,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Luyện nói tiếng Anh với giáo viên AI</h1>
+  <h1>Luyện nói tiếng Anh</h1>
 
   <div class="card hidden" id="lockCard">
     <h2>Nhập mật khẩu</h2>
@@ -143,6 +143,20 @@
           <option value="rabbit">Thỏ</option>
           <option value="dragon">Rồng</option>
           <option value="none">Không dùng</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="voiceSel">Giọng nói</label>
+        <select id="voiceSel"></select>
+      </div>
+      <div>
+        <label for="speedSel">Tốc độ nói</label>
+        <select id="speedSel">
+          <option value="slow">Chậm, rõ từng câu</option>
+          <option value="normal" selected>Vừa phải</option>
+          <option value="fast">Nhanh như người bản xứ</option>
         </select>
       </div>
     </div>
@@ -366,6 +380,17 @@
     hideLock();
     boot = b;
     el.mode.innerHTML = '';
+    var voiceSel = $('voiceSel'), speedSel = $('speedSel');
+    voiceSel.innerHTML = '';
+    (b.voices || []).forEach(function (v) { voiceSel.add(new Option(v.label, v.id)); });
+    if (b.defaultVoice) voiceSel.value = b.defaultVoice;
+    try {
+      var sv = localStorage.getItem('voice'), sp = localStorage.getItem('speed');
+      if (sv && (b.voices || []).some(function (v) { return v.id === sv; })) voiceSel.value = sv;
+      if (sp === 'slow' || sp === 'normal' || sp === 'fast') speedSel.value = sp;
+    } catch (e) {}
+    voiceSel.onchange = function () { try { localStorage.setItem('voice', voiceSel.value); } catch (e) {} };
+    speedSel.onchange = function () { try { localStorage.setItem('speed', speedSel.value); } catch (e) {} };
     if (b.teacherName) {
       teacherName = b.teacherName;
       document.querySelector('h1').textContent = 'Luyện nói tiếng Anh với ' + teacherName;
@@ -694,7 +719,8 @@
     } catch (e) { S.analyser = null; }
     setMascot('think');
 
-    var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth };
+    var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
+      voice: $('voiceSel').value, speed: $('speedSel').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {

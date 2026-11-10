@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Luyện nói tiếng Anh</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Luyện nói">
+<meta name="theme-color" content="#0f6e6e">
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --ink: #1c2530; --muted: #66727f; --line: #dde3ea;
+    --brand: #0f6e6e; --brand-ink: #ffffff; --user: #e3f1f1; --ai: #ffffff;
+    --warn: #b4530a; --bad: #b3261e; --ok: #1f7a3d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12171c; --card: #1b2229; --ink: #e8edf2; --muted: #96a3b0; --line: #2c3742;
+      --brand: #3fb5b0; --brand-ink: #06201f; --user: #1f3a3a; --ai: #222b33;
+      --warn: #f0a55a; --bad: #f2867f; --ok: #6fcf8f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; min-height: 100%; }
+  h1 { font-size: 20px; margin: 4px 0 12px; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+  .wrap.locked .card:not(#lockCard) { display: none; }
+  #lockCard .ghost { margin-top: 10px; }
+  select, input[type=text], input[type=password] {
+    width: 100%; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; min-width: 0; }
+  @media (max-width: 520px) { .row { flex-direction: column; gap: 0; } }
+
+  .stage { text-align: center; }
+
+  /* Nhân vật hoạt hình: --m = độ mở miệng (0..1) theo giọng giáo viên, --l = mức micro (0..1) */
+  #mascot { --m: 0; --l: 0; width: 170px; height: 170px; margin: 0 auto 6px; }
+  #mascot.none { display: none; }
+  #mascot svg { width: 100%; height: 100%; overflow: visible; }
+  #mascot .part { transform-box: fill-box; }
+  #mascot .body { transform-origin: 50% 100%; animation: bob 3.2s ease-in-out infinite; }
+  #mascot .eye { transform-origin: center; animation: blink 4.6s infinite; }
+  #mascot .mouth { transform-origin: 50% 0%; transform: scaleY(calc(0.18 + var(--m) * 1.25)); }
+  #mascot .ear { transform-origin: 50% 100%; transition: transform .12s; }
+  #mascot .ear.l { transform: rotate(-9deg); } #mascot .ear.r { transform: rotate(9deg); }
+  #mascot.listen .ear.l { transform: rotate(calc(-2deg + var(--l) * 9deg)); }
+  #mascot.listen .ear.r { transform: rotate(calc(2deg - var(--l) * 9deg)); }
+  #mascot.think .ear.l { transform: rotate(-24deg); }
+  #mascot .wing { transition: transform .12s; }
+  #mascot .wing.l { transform-origin: 100% 80%; animation: flapL 2.4s ease-in-out infinite; }
+  #mascot .wing.r { transform-origin: 0% 80%; animation: flapR 2.4s ease-in-out infinite; }
+  #mascot.speak .wing.l, #mascot.speak .wing.r { animation-duration: .7s; }
+  #mascot.speak .body { animation: talk .5s ease-in-out infinite; }
+  #mascot.think .body { animation: tilt 1.6s ease-in-out infinite; }
+  #mascot .flame { opacity: calc(var(--m) * 1.6); transform-origin: 50% 0%; transform: scale(calc(0.5 + var(--m))); }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes talk { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-3px) rotate(1.5deg); } }
+  @keyframes tilt { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
+  @keyframes flapL { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(14deg); } }
+  @keyframes flapR { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+  @media (prefers-reduced-motion: reduce) { #mascot * { animation: none !important; } }
+
+  #mainBtn {
+    width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--brand); color: var(--brand-ink); font: 600 15px/1.2 inherit;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18); transition: transform .08s, background .2s;
+  }
+  #mainBtn:active { transform: scale(.97); }
+  #mainBtn.on { background: var(--bad); color: #fff; }
+  #mainBtn:disabled { opacity: .55; cursor: default; }
+  #status { margin: 12px 0 2px; font-weight: 600; min-height: 24px; }
+  #status.listen { color: var(--ok); } #status.speak { color: var(--brand); }
+  #status.warn { color: var(--warn); } #status.bad { color: var(--bad); }
+  #sub { font-size: 13px; color: var(--muted); min-height: 20px; }
+  #meter { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 10px auto 0; max-width: 260px; }
+  #meter i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .08s; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+  .tools button, .ghost {
+    padding: 9px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--ink);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+  }
+  .tools button.active { background: var(--warn); color: #fff; border-color: var(--warn); }
+  .hidden { display: none !important; }
+
+  #log { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; padding: 2px; }
+  .msg { max-width: 88%; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--user); border-bottom-right-radius: 4px; }
+  .msg.ai { align-self: flex-start; background: var(--ai); border-bottom-left-radius: 4px; }
+  .msg small { display: block; font-size: 11px; color: var(--muted); }
+  #log.hide-ai .msg.ai span { filter: blur(6px); cursor: pointer; }
+  #log.hide-ai .msg.ai.show span { filter: none; }
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 10px; }
+
+  .fix { border-left: 3px solid var(--line); padding: 2px 0 2px 10px; margin: 10px 0; }
+  .fix .said { color: var(--bad); } .fix .better { color: var(--ok); font-weight: 600; }
+  .fix .note, .voc .ex { font-size: 14px; color: var(--muted); }
+  .voc { margin: 8px 0; } .voc b { color: var(--brand); }
+  ul { margin: 6px 0; padding-left: 20px; }
+  .recent div { font-size: 14px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .recent div:first-child { border-top: 0; }
+  .recent span { color: var(--muted); }
+  .notice { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: auto; padding: 8px 0; }
+  .alert { color: var(--bad); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Luyện nói tiếng Anh với giáo viên AI</h1>
+
+  <div class="card hidden" id="lockCard">
+    <h2>Nhập mật khẩu</h2>
+    <input type="password" id="pw" autocomplete="current-password" placeholder="Mật khẩu của app">
+    <button id="pwBtn" class="ghost">Mở khóa</button>
+    <div id="pwMsg" class="alert"></div>
+  </div>
+
+  <div class="card" id="setupCard">
+    <div class="row">
+      <div>
+        <label for="mode">Chế độ học</label>
+        <select id="mode"></select>
+      </div>
+      <div>
+        <label for="subMode">Nội dung</label>
+        <select id="subMode"></select>
+      </div>
+      <div>
+        <label for="mascotSel">Nhân vật</label>
+        <select id="mascotSel">
+          <option value="rabbit">Thỏ</option>
+          <option value="dragon">Rồng</option>
+          <option value="none">Không dùng</option>
+        </select>
+      </div>
+    </div>
+    <label for="topic">Chủ đề muốn luyện hôm nay (không bắt buộc)</label>
+    <input type="text" id="topic" maxlength="300" placeholder="Ví dụ: explaining a CTO PCI strategy, ordering food, my hometown…">
+    <div id="bootMsg" class="alert"></div>
+  </div>
+
+  <div class="card stage">
+    <div id="mascot" class="idle" aria-hidden="true"></div>
+    <button id="mainBtn" disabled>Đang tải…</button>
+    <div id="status"></div>
+    <div id="sub"></div>
+    <div id="meter" class="hidden"><i></i></div>
+    <div class="tools hidden" id="tools">
+      <button id="muteBtn" title="Tạm tắt micro">Tắt micro</button>
+      <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
+      <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
+      <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Hội thoại</h2>
+    <div id="log"><div class="empty">Bấm nút để bắt đầu. Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.</div></div>
+  </div>
+
+  <div class="card hidden" id="summaryCard">
+    <h2>Tổng kết buổi học</h2>
+    <div id="summary"></div>
+  </div>
+
+  <div class="card hidden" id="recentCard">
+    <h2>Các buổi gần đây</h2>
+    <div class="recent" id="recent"></div>
+  </div>
+
+  <div class="notice">Gói miễn phí của Gemini: Google có thể dùng nội dung hội thoại để cải thiện sản phẩm. Không nói thông tin nhận dạng bệnh nhân.</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Máy chủ Apps Script (giữ API key, mật khẩu và Google Sheet). Trang này chỉ là giao diện.
+  var API_URL = 'https://script.google.com/macros/s/AKfycbwS20-ylTMVr0UAGN9zPIl9Za26H6RptgWkydC-KbFCrkvp9SXrIGfNMvMNbt83bNa0/exec';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    mode: $('mode'), subMode: $('subMode'), topic: $('topic'), bootMsg: $('bootMsg'), setupCard: $('setupCard'),
+    mainBtn: $('mainBtn'), status: $('status'), sub: $('sub'), meter: $('meter'), meterBar: $('meter').firstElementChild,
+    tools: $('tools'), muteBtn: $('muteBtn'), prepBtn: $('prepBtn'), reviewBtn: $('reviewBtn'),
+    log: $('log'), summaryCard: $('summaryCard'), summary: $('summary'), recentCard: $('recentCard'), recent: $('recent')
+  };
+
+  var boot = null;
+  var S = null; // trạng thái buổi học đang chạy
+  var teacherName = 'Giáo viên'; // lấy từ TEACHER_NAME trong sheet Config
+
+  // ------------------------------------------------------------ nhân vật hoạt hình
+
+  var MASCOTS = {
+    rabbit:
+      '<svg viewBox="0 0 200 200"><g class="part body">' +
+      '<g class="part ear l"><ellipse cx="74" cy="52" rx="17" ry="46" fill="#fff" stroke="#cfd6de" stroke-width="3"/><ellipse cx="74" cy="56" rx="7.5" ry="31" fill="#ffc4d2"/></g>' +
+      '<g class="part ear r"><ellipse cx="126" cy="52" rx="17" ry="46" fill="#fff" stroke="#cfd6de" stroke-width="3"/><ellipse cx="126" cy="56" rx="7.5" ry="31" fill="#ffc4d2"/></g>' +
+      '<ellipse cx="100" cy="130" rx="64" ry="56" fill="#fff" stroke="#cfd6de" stroke-width="3"/>' +
+      '<circle cx="60" cy="146" r="10" fill="#ffb3c4" opacity=".65"/><circle cx="140" cy="146" r="10" fill="#ffb3c4" opacity=".65"/>' +
+      '<g class="part eye"><ellipse cx="77" cy="120" rx="8" ry="10" fill="#2a2f37"/><circle cx="80" cy="116" r="3" fill="#fff"/></g>' +
+      '<g class="part eye"><ellipse cx="123" cy="120" rx="8" ry="10" fill="#2a2f37"/><circle cx="126" cy="116" r="3" fill="#fff"/></g>' +
+      '<path d="M93 136 Q100 144 107 136 Q100 131 93 136Z" fill="#ff8fa8"/>' +
+      '<path d="M100 142 V148 M88 150 Q94 155 100 148 Q106 155 112 150" fill="none" stroke="#7a828c" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<ellipse class="part mouth" cx="100" cy="160" rx="9" ry="9" fill="#b3384f"/>' +
+      '</g></svg>',
+    dragon:
+      '<svg viewBox="0 0 200 200"><g class="part body">' +
+      '<path class="part wing l" d="M48 120 Q8 96 14 58 Q30 78 40 70 Q42 92 58 96Z" fill="#8fd6e8" stroke="#3f9bb3" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path class="part wing r" d="M152 120 Q192 96 186 58 Q170 78 160 70 Q158 92 142 96Z" fill="#8fd6e8" stroke="#3f9bb3" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M70 66 L62 34 L86 58Z M130 66 L138 34 L114 58Z" fill="#ffd166" stroke="#d9a520" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M92 54 L100 38 L108 54Z" fill="#ff9f6b"/>' +
+      '<ellipse cx="100" cy="118" rx="62" ry="60" fill="#63cf8f" stroke="#2f9a5e" stroke-width="3"/>' +
+      '<ellipse cx="100" cy="146" rx="44" ry="30" fill="#c6f3d3"/>' +
+      '<circle cx="58" cy="134" r="9" fill="#ff9fb3" opacity=".6"/><circle cx="142" cy="134" r="9" fill="#ff9fb3" opacity=".6"/>' +
+      '<circle cx="76" cy="102" r="15" fill="#fff" stroke="#2f9a5e" stroke-width="2.5"/><circle cx="124" cy="102" r="15" fill="#fff" stroke="#2f9a5e" stroke-width="2.5"/>' +
+      '<g class="part eye"><ellipse cx="78" cy="104" rx="7" ry="9" fill="#2a2f37"/><circle cx="81" cy="100" r="2.8" fill="#fff"/></g>' +
+      '<g class="part eye"><ellipse cx="122" cy="104" rx="7" ry="9" fill="#2a2f37"/><circle cx="125" cy="100" r="2.8" fill="#fff"/></g>' +
+      '<ellipse cx="90" cy="134" rx="3" ry="4" fill="#2f9a5e"/><ellipse cx="110" cy="134" rx="3" ry="4" fill="#2f9a5e"/>' +
+      '<ellipse class="part mouth" cx="100" cy="148" rx="13" ry="11" fill="#b3384f"/>' +
+      '<path class="part flame" d="M100 176 Q88 190 100 204 Q112 190 100 176Z" fill="#ff9f43"/>' +
+      '</g></svg>'
+  };
+  var mascot = $('mascot');
+  var mascotSel = $('mascotSel');
+
+  function renderMascot() {
+    var kind = mascotSel.value;
+    mascot.innerHTML = MASCOTS[kind] || '';
+    mascot.classList.toggle('none', !MASCOTS[kind]);
+  }
+  function setMascot(state) { // idle | think | listen | speak
+    mascot.classList.remove('idle', 'think', 'listen', 'speak');
+    mascot.classList.add(state);
+    if (state !== 'speak') mascot.style.setProperty('--m', 0);
+    if (state !== 'listen') mascot.style.setProperty('--l', 0);
+  }
+  // Miệng mở theo biên độ âm thanh đang phát.
+  function mouthLoop() {
+    if (!S || !S.analyser) return;
+    var a = S.analyser, buf = S.mouthBuf, sum = 0;
+    a.getByteTimeDomainData(buf);
+    for (var i = 0; i < buf.length; i++) { var d = (buf[i] - 128) / 128; sum += d * d; }
+    var level = Math.min(1, Math.sqrt(sum / buf.length) * 5);
+    S.mouth = S.mouth * 0.55 + level * 0.45;
+    mascot.style.setProperty('--m', S.playing.size ? S.mouth.toFixed(3) : 0);
+    S.raf = requestAnimationFrame(mouthLoop);
+  }
+
+  try { var savedM = localStorage.getItem('mascot'); if (savedM) mascotSel.value = savedM; } catch (e) {}
+  renderMascot();
+  mascotSel.addEventListener('change', function () {
+    renderMascot();
+    try { localStorage.setItem('mascot', mascotSel.value); } catch (e) {}
+  });
+
+  // ------------------------------------------------------------ gọi server
+
+  function server(fn, arg) {
+    // Gửi dạng text/plain để không phát sinh bước kiểm tra CORS trước; Apps Script trả JSON.
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, arg: arg }),
+      redirect: 'follow'
+    }).then(function (r) {
+      if (!r.ok) throw new Error('Máy chủ trả lỗi HTTP ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'Lỗi máy chủ');
+      return j.result;
+    });
+  }
+
+  // ------------------------------------------------------------ màn hình chính
+
+  function modeById(id) {
+    return boot.modes.filter(function (m) { return m.id === id; })[0] || null;
+  }
+
+  function fillSubModes() {
+    var m = modeById(el.mode.value);
+    el.subMode.innerHTML = '';
+    (m ? m.subs : []).forEach(function (s) { el.subMode.add(new Option(s.label, s.id)); });
+  }
+
+  function renderRecent(list) {
+    el.recent.innerHTML = '';
+    (list || []).forEach(function (s) {
+      var d = document.createElement('div');
+      var head = document.createElement('span');
+      head.textContent = s.date + ' · ' + s.mode + (s.minutes ? ' · ' + s.minutes + ' phút' : '');
+      d.appendChild(head);
+      d.appendChild(document.createElement('br'));
+      d.appendChild(document.createTextNode((s.topic ? s.topic + ': ' : '') + (s.summary || '')));
+      el.recent.appendChild(d);
+    });
+    el.recentCard.classList.toggle('hidden', !(list && list.length));
+  }
+
+  function setStatus(text, cls, sub) {
+    el.status.textContent = text || '';
+    el.status.className = cls || '';
+    if (sub !== undefined) el.sub.textContent = sub;
+  }
+
+  function setIdleButton() {
+    el.mainBtn.disabled = false;
+    el.mainBtn.classList.remove('on');
+    el.mainBtn.textContent = 'Bắt đầu buổi học';
+  }
+
+  // ---- mật khẩu: trình duyệt chỉ giữ mã đăng nhập do server cấp, không giữ mật khẩu
+  var auth = '';
+  try { auth = localStorage.getItem('auth') || ''; } catch (e) {}
+  var wrap = document.querySelector('.wrap');
+
+  function showLock(msg) {
+    wrap.classList.add('locked');
+    $('lockCard').classList.remove('hidden');
+    $('pwMsg').textContent = msg || '';
+    $('pwBtn').disabled = false;
+  }
+  function hideLock() {
+    wrap.classList.remove('locked');
+    $('lockCard').classList.add('hidden');
+    $('pw').value = '';
+  }
+  function isAuthError(e) { return /AUTH/.test(String(e && e.message || e)); }
+  function forgetAuth() {
+    auth = '';
+    try { localStorage.removeItem('auth'); } catch (e) {}
+  }
+  function submitPassword() {
+    var pw = $('pw').value;
+    if (!pw) return;
+    $('pwBtn').disabled = true;
+    $('pwMsg').textContent = 'Đang kiểm tra…';
+    server('login', pw).then(function (r) {
+      if (!r.ok) { showLock(r.error || 'Sai mật khẩu.'); return; }
+      auth = r.token || '';
+      try { localStorage.setItem('auth', auth); } catch (e) {}
+      $('pwMsg').textContent = '';
+      loadBoot();
+    }).catch(function (e) { showLock('Lỗi: ' + (e && e.message || e)); });
+  }
+  $('pwBtn').addEventListener('click', submitPassword);
+  $('pw').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') submitPassword(); });
+
+  function loadBoot() {
+  server('getBootstrap', auth).then(function (b) {
+    if (b.locked) { forgetAuth(); showLock(''); return; }
+    hideLock();
+    boot = b;
+    el.mode.innerHTML = '';
+    if (b.teacherName) {
+      teacherName = b.teacherName;
+      document.querySelector('h1').textContent = 'Luyện nói tiếng Anh với ' + teacherName;
+      $('hideBtn').textContent = 'Ẩn chữ của ' + teacherName;
+    }
+    b.modes.forEach(function (m) { el.mode.add(new Option(m.label, m.id)); });
+    try { var saved = localStorage.getItem('mode'); if (saved && modeById(saved)) el.mode.value = saved; } catch (e) {}
+    fillSubModes();
+    renderRecent(b.recent);
+    if (!b.hasKey) el.bootMsg.textContent = 'Máy chủ chưa có GEMINI_API_KEY trong Script Properties.';
+    setIdleButton();
+  }).catch(function (e) {
+    el.mainBtn.textContent = 'Lỗi';
+    el.bootMsg.textContent = 'Không tải được ứng dụng: ' + (e && e.message || e);
+  });
+  }
+  loadBoot();
+
+  el.mode.addEventListener('change', function () {
+    fillSubModes();
+    try { localStorage.setItem('mode', el.mode.value); } catch (e) {}
+  });
+
+  // ------------------------------------------------------------ hiển thị chữ
+
+  // Mỗi bên có một "bong bóng đang mở"; chữ nhận dần được nối vào đó.
+  function appendText(role, text) {
+    if (!text) return;
+    var cur = S.open[role];
+    if (!cur) {
+      var node = document.createElement('div');
+      node.className = 'msg ' + role;
+      var tag = document.createElement('small');
+      tag.textContent = role === 'user' ? 'Bạn' : teacherName;
+      var body = document.createElement('span');
+      node.appendChild(tag); node.appendChild(body);
+      cur = { role: role, text: '', node: node, body: body, at: Date.now() };
+
+      // Chữ của người học thường về chậm hơn tiếng: nếu giáo viên vừa mới bắt đầu trả lời
+      // thì câu của người học phải đứng trước câu trả lời đó.
+      var ai = S.open.ai;
+      if (role === 'user' && ai && Date.now() - ai.at < 2500) {
+        el.log.insertBefore(node, ai.node);
+        S.items.splice(S.items.indexOf(ai), 0, cur);
+      } else {
+        el.log.appendChild(node);
+        S.items.push(cur);
+      }
+      S.open[role] = cur;
+    }
+    cur.text += text;
+    cur.body.textContent = cur.text;
+    el.log.scrollTop = el.log.scrollHeight;
+  }
+
+  function closeBubbles(role) {
+    if (!S) return;
+    if (role) S.open[role] = null; else { S.open.user = null; S.open.ai = null; }
+  }
+
+  // ------------------------------------------------------------ âm thanh ra
+
+  function playChunk(b64) {
+    var bin = atob(b64);
+    var n = bin.length >> 1;
+    var f32 = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); // PCM 16-bit little-endian
+      if (v >= 32768) v -= 65536;
+      f32[i] = v / 32768;
+    }
+    var ctx = S.outCtx;
+    var buf = ctx.createBuffer(1, n, 24000);
+    buf.getChannelData(0).set(f32);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(S.analyser || ctx.destination);
+    var t = Math.max(ctx.currentTime + 0.03, S.nextTime);
+    src.start(t);
+    S.nextTime = t + buf.duration;
+    S.playing.add(src);
+    src.onended = function () {
+      if (!S) return;
+      S.playing.delete(src);
+      if (!S.playing.size) refreshStatus();
+    };
+    refreshStatus();
+  }
+
+  function stopPlayback() {
+    S.playing.forEach(function (src) { try { src.onended = null; src.stop(); } catch (e) {} });
+    S.playing.clear();
+    S.nextTime = 0;
+  }
+
+  // ------------------------------------------------------------ âm thanh vào
+
+  var WORKLET = 'class Cap extends AudioWorkletProcessor{' +
+    'constructor(o){super();this.size=o.processorOptions.size;this.buf=new Float32Array(this.size);this.n=0;}' +
+    'process(inputs){var ch=inputs[0][0];if(ch){for(var i=0;i<ch.length;i++){this.buf[this.n++]=ch[i];' +
+    'if(this.n===this.size){this.port.postMessage(this.buf.slice(0));this.n=0;}}}return true;}}' +
+    'registerProcessor("cap",Cap);';
+
+  function onMicFrame(f32) {
+    if (!S) return;
+    // thanh mức âm lượng
+    var sum = 0;
+    for (var i = 0; i < f32.length; i += 4) sum += f32[i] * f32[i];
+    var rms = Math.sqrt(sum / (f32.length / 4));
+    el.meterBar.style.width = (S.muted ? 0 : Math.min(100, Math.round(rms * 400))) + '%';
+    mascot.style.setProperty('--l', S.muted ? 0 : Math.min(1, rms * 6).toFixed(2));
+
+    if (S.muted || !S.ready || !S.ws || S.ws.readyState !== 1) return;
+    var bytes = new Uint8Array(f32.length * 2);
+    var view = new DataView(bytes.buffer);
+    for (var j = 0; j < f32.length; j++) {
+      var s = Math.max(-1, Math.min(1, f32[j]));
+      view.setInt16(j * 2, s < 0 ? s * 32768 : s * 32767, true);
+    }
+    var bin = '';
+    for (var k = 0; k < bytes.length; k += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(k, k + 8192));
+    S.ws.send(JSON.stringify({ realtimeInput: { audio: { data: btoa(bin), mimeType: 'audio/pcm;rate=' + S.micCtx.sampleRate } } }));
+  }
+
+  function startMic() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { S.micCtx = new AC({ sampleRate: 16000 }); } catch (e) { S.micCtx = new AC(); }
+    var ctx = S.micCtx;
+    var source = ctx.createMediaStreamSource(S.stream);
+    var silent = ctx.createGain();
+    silent.gain.value = 0;
+    silent.connect(ctx.destination);
+    var size = Math.round(ctx.sampleRate * 0.064); // ~64 ms mỗi gói
+
+    function fallback() { // trình duyệt không cho nạp AudioWorklet
+      var sp = ctx.createScriptProcessor(2048, 1, 1);
+      sp.onaudioprocess = function (ev) { onMicFrame(new Float32Array(ev.inputBuffer.getChannelData(0))); };
+      source.connect(sp); sp.connect(silent);
+    }
+    if (!ctx.audioWorklet) { fallback(); return Promise.resolve(); }
+    var url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
+    return ctx.audioWorklet.addModule(url).then(function () {
+      var node = new AudioWorkletNode(ctx, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, processorOptions: { size: size } });
+      node.port.onmessage = function (ev) { onMicFrame(ev.data); };
+      source.connect(node); node.connect(silent);
+    }).catch(fallback);
+  }
+
+  // ------------------------------------------------------------ WebSocket tới Gemini Live
+
+  function sendText(text) {
+    if (S && S.ready && S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify({ realtimeInput: { text: text } }));
+  }
+
+  function connect() {
+    S.ready = false;
+    var ws = new WebSocket(S.wsUrl + '?access_token=' + encodeURIComponent(S.token));
+    ws.binaryType = 'arraybuffer';
+    S.ws = ws;
+    var decoder = new TextDecoder();
+
+    ws.onopen = function () {
+      var msg = JSON.parse(JSON.stringify(S.setup));
+      if (S.handle) msg.setup.sessionResumption = { handle: S.handle };
+      ws.send(JSON.stringify(msg));
+    };
+    ws.onmessage = function (ev) {
+      if (S && S.ws === ws) {
+        var raw = typeof ev.data === 'string' ? ev.data : decoder.decode(ev.data);
+        try { handle(JSON.parse(raw)); } catch (e) { console.error(e, raw); }
+      }
+    };
+    ws.onerror = function () {};
+    ws.onclose = function (ev) {
+      if (!S || S.ws !== ws || S.ending) return;
+      S.ready = false;
+      S.lastClose = ev.code + (ev.reason ? ' ' + ev.reason : '');
+      console.warn('WebSocket đóng:', S.lastClose);
+      reconnect();
+    };
+  }
+
+  function handle(msg) {
+    if (msg.setupComplete) {
+      S.ready = true;
+      S.retries = 0;
+      if (!S.started) { S.started = true; sendText(S.kickoff); }
+      refreshStatus();
+      return;
+    }
+    if (msg.sessionResumptionUpdate) {
+      var u = msg.sessionResumptionUpdate;
+      if (u.resumable && u.newHandle) S.handle = u.newHandle;
+    }
+    if (msg.goAway) { // server sắp đóng kết nối (~10 phút một lần): nối lại và tiếp tục cùng phiên
+      S.ready = false;
+      var old = S.ws;
+      S.ws = null;
+      try { old.close(); } catch (e) {}
+      reconnect();
+      return;
+    }
+    var sc = msg.serverContent;
+    if (!sc) return;
+    if (sc.interrupted) { stopPlayback(); closeBubbles('ai'); refreshStatus(); }
+    if (sc.inputTranscription && sc.inputTranscription.text) appendText('user', sc.inputTranscription.text);
+    if (sc.outputTranscription && sc.outputTranscription.text) appendText('ai', sc.outputTranscription.text);
+    if (sc.modelTurn && sc.modelTurn.parts) {
+      sc.modelTurn.parts.forEach(function (p) {
+        if (p.inlineData && p.inlineData.data && /^audio\//.test(p.inlineData.mimeType || 'audio/pcm')) playChunk(p.inlineData.data);
+      });
+    }
+    if (sc.turnComplete) closeBubbles();
+  }
+
+  function reconnect() {
+    if (!S || S.ending) return;
+    S.retries = (S.retries || 0) + 1;
+    if (S.retries > 4 || !S.started) {
+      stopPlayback();
+      setStatus('Mất kết nối', 'bad', (S.started ? 'Bấm "Kết thúc" để lưu và xem tổng kết phần đã học.' :
+        'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') + '. Kiểm tra LIVE_MODEL trong sheet Config và hạn mức gói miễn phí.'));
+      return;
+    }
+    setStatus('Đang kết nối lại…', 'warn', '');
+    setMascot('think');
+    var tokenOld = Date.now() - S.tokenAt > (S.tokenMinutes - 2) * 60000;
+    var needToken = tokenOld || S.retries > 1 || !S.handle;
+    var wait = new Promise(function (r) { setTimeout(r, S.retries > 1 ? 1200 * S.retries : 100); });
+    var p = needToken ? wait.then(function () { return server('renewToken', auth); }).then(function (t) {
+      S.token = t.token; S.tokenAt = Date.now(); S.tokenMinutes = t.tokenMinutes;
+    }) : wait;
+    p.then(function () { if (S && !S.ending) connect(); }).catch(function (e) {
+      console.error(e);
+      if (S && !S.ending) reconnect();
+    });
+  }
+
+  // ------------------------------------------------------------ trạng thái
+
+  function refreshStatus() {
+    if (!S || S.ending) return;
+    var t = Math.floor((Date.now() - S.startedAt) / 1000);
+    var clock = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
+    var sub = S.modeLabel + ' · ' + clock;
+    if (!S.ready) return; // đang kết nối / nối lại: giữ nguyên dòng hiện có
+    if (S.prepLeft > 0) { setStatus('Chuẩn bị: còn ' + S.prepLeft + ' giây', 'warn', sub); setMascot('think'); }
+    else if (S.playing.size) { setStatus(teacherName + ' đang nói — có thể ngắt lời', 'speak', sub); setMascot('speak'); }
+    else if (S.muted) { setStatus('Micro đang tắt', 'warn', sub); setMascot('idle'); }
+    else { setStatus('Đang nghe…', 'listen', sub); setMascot('listen'); }
+  }
+
+  function setMuted(m) {
+    S.muted = m;
+    el.muteBtn.classList.toggle('active', m);
+    el.muteBtn.textContent = m ? 'Bật micro' : 'Tắt micro';
+    if (m && S.ready && S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
+    refreshStatus();
+  }
+
+  function endPrep(announce) {
+    clearInterval(S.prepTimer);
+    S.prepLeft = 0;
+    el.prepBtn.classList.remove('active');
+    el.prepBtn.textContent = 'Chuẩn bị 1 phút';
+    setMuted(false);
+    if (announce) sendText('My preparation time is over. I am ready to give my Part 2 talk now.');
+  }
+
+  el.muteBtn.addEventListener('click', function () { if (S && !(S.prepLeft > 0)) setMuted(!S.muted); });
+  el.reviewBtn.addEventListener('click', function () { sendText('review'); });
+
+  // Che chữ của giáo viên để luyện nghe; chạm vào một câu để hiện riêng câu đó.
+  function setHideAi(on) {
+    el.log.classList.toggle('hide-ai', on);
+    $('hideBtn').classList.toggle('active', on);
+    $('hideBtn').textContent = (on ? 'Hiện chữ của ' : 'Ẩn chữ của ') + teacherName;
+  }
+  $('hideBtn').addEventListener('click', function () { setHideAi(!el.log.classList.contains('hide-ai')); });
+  el.log.addEventListener('click', function (ev) {
+    var m = ev.target.closest ? ev.target.closest('.msg.ai') : null;
+    if (m && el.log.classList.contains('hide-ai')) m.classList.toggle('show');
+  });
+  el.prepBtn.addEventListener('click', function () {
+    if (!S) return;
+    if (S.prepLeft > 0) { endPrep(true); return; } // bấm lần nữa = sẵn sàng sớm
+    S.prepLeft = 60;
+    setMuted(true);
+    el.prepBtn.classList.add('active');
+    el.prepBtn.textContent = 'Tôi sẵn sàng';
+    S.prepTimer = setInterval(function () {
+      if (!S) return;
+      S.prepLeft--;
+      if (S.prepLeft <= 0) endPrep(true); else refreshStatus();
+    }, 1000);
+  });
+
+  // ------------------------------------------------------------ bắt đầu / kết thúc
+
+  function start() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.WebSocket) {
+      setStatus('Trình duyệt không hỗ trợ', 'bad', 'Hãy dùng Chrome bản mới trên laptop hoặc Android.');
+      return;
+    }
+    el.mainBtn.disabled = true;
+    el.summaryCard.classList.add('hidden');
+    el.log.innerHTML = '';
+    setStatus('Đang kết nối…', 'warn', 'Xin quyền micro và mở phiên với giáo viên');
+
+    S = {
+      ws: null, ready: false, started: false, ending: false, retries: 0, handle: null,
+      playing: new Set(), nextTime: 0, muted: false, prepLeft: 0, prepTimer: null,
+      open: { user: null, ai: null }, items: [], startedAt: Date.now(), modeLabel: '', tick: null
+    };
+    // Tạo AudioContext ngay trong lúc bấm nút để trình duyệt cho phép phát tiếng.
+    try { S.outCtx = new AC({ sampleRate: 24000 }); } catch (e) { S.outCtx = new AC(); }
+    S.outCtx.resume();
+    try {
+      S.analyser = S.outCtx.createAnalyser();
+      S.analyser.fftSize = 256;
+      S.analyser.connect(S.outCtx.destination);
+      S.mouthBuf = new Uint8Array(S.analyser.fftSize);
+      S.mouth = 0;
+      S.raf = requestAnimationFrame(mouthLoop);
+    } catch (e) { S.analyser = null; }
+    setMascot('think');
+
+    var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth };
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
+    }).then(function (stream) {
+      S.stream = stream;
+      return Promise.all([startMic(), server('startSession', req)]);
+    }).then(function (r) {
+      var info = r[1];
+      S.token = info.token; S.tokenAt = Date.now(); S.tokenMinutes = info.tokenMinutes;
+      if (info.teacherName) teacherName = info.teacherName;
+      S.wsUrl = info.wsUrl; S.setup = info.setup; S.kickoff = info.kickoff; S.modeLabel = info.modeLabel;
+      S.startedAt = Date.now();
+      el.setupCard.classList.add('hidden');
+      el.tools.classList.remove('hidden');
+      el.meter.classList.remove('hidden');
+      el.prepBtn.classList.toggle('hidden', req.mode !== 'ielts');
+      setHideAi(req.mode === 'listening');
+      el.mainBtn.disabled = false;
+      el.mainBtn.classList.add('on');
+      el.mainBtn.textContent = 'Kết thúc';
+      S.tick = setInterval(refreshStatus, 1000);
+      try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { if (S) S.wake = w; }).catch(function () {}); } catch (e) {}
+      connect();
+    }).catch(function (e) {
+      var name = e && e.name;
+      var msg = name === 'NotAllowedError' ? 'Chưa được cấp quyền micro. Hãy cho phép micro cho trang này trong cài đặt trang web của trình duyệt rồi thử lại.' :
+        name === 'NotFoundError' ? 'Không tìm thấy micro trên thiết bị.' : (e && e.message || String(e));
+      cleanup();
+      setStatus('Không bắt đầu được', 'bad', msg);
+      setIdleButton();
+      if (isAuthError(e)) { setStatus('', '', ''); forgetAuth(); showLock('Mật khẩu đã đổi, hãy nhập lại.'); }
+    });
+  }
+
+  function cleanup() {
+    if (!S) return;
+    S.ending = true;
+    clearInterval(S.tick); clearInterval(S.prepTimer);
+    cancelAnimationFrame(S.raf);
+    setMascot('idle');
+    try { if (S.ws) S.ws.close(); } catch (e) {}
+    try { stopPlayback(); } catch (e) {}
+    try { if (S.stream) S.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { if (S.micCtx) S.micCtx.close(); } catch (e) {}
+    try { if (S.outCtx) S.outCtx.close(); } catch (e) {}
+    try { if (S.wake) S.wake.release(); } catch (e) {}
+    S = null;
+    el.tools.classList.add('hidden');
+    el.meter.classList.add('hidden');
+    el.setupCard.classList.remove('hidden');
+  }
+
+  function end() {
+    var payload = {
+      auth: auth,
+      modeLabel: S.modeLabel,
+      topic: el.topic.value,
+      durationSec: Math.round((Date.now() - S.startedAt) / 1000),
+      transcript: S.items.map(function (it) { return { role: it.role, text: it.text }; })
+    };
+    cleanup();
+    el.mainBtn.disabled = true;
+    el.mainBtn.classList.remove('on');
+    el.mainBtn.textContent = 'Đang lưu…';
+    setStatus('Đang tạo bản tổng kết…', 'warn', 'Mất khoảng 10–20 giây');
+    server('finishSession', payload).then(function (res) {
+      renderSummary(res);
+      setStatus(res.saved ? 'Đã lưu buổi học' : 'Chưa lưu được buổi học', res.saved ? 'listen' : 'bad', '');
+      return server('getBootstrap', auth).then(function (b) { if (!b.locked) renderRecent(b.recent); });
+    }).catch(function (e) {
+      setStatus('Lỗi khi lưu buổi học', 'bad', e && e.message || String(e));
+    }).then(setIdleButton);
+  }
+
+  function renderSummary(res) {
+    var box = el.summary;
+    box.innerHTML = '';
+    function add(tag, text, cls, parent) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text) n.textContent = text;
+      (parent || box).appendChild(n);
+      return n;
+    }
+    if (res.error) add('p', res.error, 'alert');
+    if (res.summary) add('p', res.summary);
+    if (res.corrections && res.corrections.length) {
+      add('h2', 'Câu chưa chuẩn và cách nói tốt hơn');
+      res.corrections.forEach(function (c) {
+        var d = add('div', '', 'fix');
+        add('div', '✗ ' + (c.said || ''), 'said', d);
+        add('div', '✓ ' + (c.better || ''), 'better', d);
+        if (c.note) add('div', c.note, 'note', d);
+      });
+    }
+    if (res.vocabulary && res.vocabulary.length) {
+      add('h2', 'Từ và cụm từ đáng học');
+      res.vocabulary.forEach(function (v) {
+        var d = add('div', '', 'voc');
+        add('b', v.term || '', '', d);
+        d.appendChild(document.createTextNode(v.meaning ? ' — ' + v.meaning : ''));
+        if (v.example) add('div', v.example, 'ex', d);
+      });
+    }
+    if (res.focus_points && res.focus_points.length) {
+      add('h2', 'Cần luyện tiếp');
+      var ul = add('ul');
+      res.focus_points.forEach(function (f) { add('li', f, '', ul); });
+    }
+    el.summaryCard.classList.remove('hidden');
+    el.summaryCard.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  el.mainBtn.addEventListener('click', function () { if (S) end(); else start(); });
+  window.addEventListener('beforeunload', function (ev) { if (S) { ev.preventDefault(); ev.returnValue = ''; } });
+})();
+</script>
+</body>
+</html>

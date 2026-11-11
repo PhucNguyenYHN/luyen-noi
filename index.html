@@ -158,14 +158,22 @@
     </div>
     <div class="row">
       <div>
+        <label for="langSel">Ngôn ngữ giảng</label>
+        <select id="langSel">
+          <option value="vi_much" selected>Song ngữ Việt – Anh</option>
+          <option value="vi_some">Chủ yếu tiếng Anh, giải thích tiếng Việt khi khó</option>
+          <option value="en">Toàn tiếng Anh</option>
+        </select>
+      </div>
+      <div>
         <label for="voiceSel">Giọng nói</label>
         <select id="voiceSel"></select>
       </div>
       <div>
         <label for="speedSel">Tốc độ nói</label>
         <select id="speedSel">
-          <option value="slow">Chậm, rõ từng câu</option>
-          <option value="normal" selected>Vừa phải</option>
+          <option value="slow" selected>Chậm, rõ từng câu</option>
+          <option value="normal">Vừa phải</option>
           <option value="fast">Nhanh như người bản xứ</option>
         </select>
       </div>
@@ -436,6 +444,12 @@
     } catch (e) {}
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
     searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
+    var langSel = $('langSel');
+    try {
+      var sl = localStorage.getItem('lang');
+      if (sl && langSel.querySelector('option[value="' + sl + '"]')) langSel.value = sl;
+    } catch (e) {}
+    langSel.onchange = function () { try { localStorage.setItem('lang', langSel.value); } catch (e) {} };
     renderStats(b.stats);
     if (b.teacherName) {
       teacherName = b.teacherName;
@@ -788,7 +802,7 @@
 
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
-      correct: $('correctSel').value, search: $('searchChk').checked };
+      correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {

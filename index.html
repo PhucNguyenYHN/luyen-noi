@@ -124,6 +124,26 @@
   .notice { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: auto; padding: 8px 0; }
   .alert { color: var(--bad); font-size: 14px; }
 
+  /* Vòng sáng quanh nhân vật và cột sóng âm: --glow (0..1) theo giọng nói */
+  .orb {
+    --glow: 0; position: relative; width: 210px; height: 210px; margin: 6px auto 4px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 45%, rgba(63, 181, 176, .26), rgba(63, 181, 176, .05) 68%, transparent 71%);
+    box-shadow: 0 0 calc(8px + var(--glow) * 46px) calc(var(--glow) * 10px) rgba(63, 181, 176, calc(.18 + var(--glow) * .5));
+    transition: box-shadow .08s linear;
+  }
+  .orb[data-who="listen"] {
+    background: radial-gradient(circle at 50% 45%, rgba(111, 207, 143, .24), rgba(111, 207, 143, .05) 68%, transparent 71%);
+    box-shadow: 0 0 calc(8px + var(--glow) * 46px) calc(var(--glow) * 10px) rgba(111, 207, 143, calc(.15 + var(--glow) * .5));
+  }
+  .orb #mascot { margin: 0; }
+  .bars { display: flex; gap: 6px; justify-content: center; align-items: center; height: 40px; margin: 2px 0 6px; }
+  .bars i {
+    display: block; width: 7px; height: 40px; border-radius: 4px; background: var(--brand);
+    transform: scaleY(.12); transform-origin: 50% 50%; transition: transform .06s linear;
+  }
+  .orb[data-who="listen"] ~ .bars i { background: var(--ok); }
+
   /* Màn hình chính chỉ để nói; cài đặt nằm trong bảng bật lên */
   .stage { padding-top: 12px; }
   .lessonbar { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
@@ -176,7 +196,10 @@
       <button id="gearBtn" class="ghost" aria-label="Mở cài đặt">⚙ Cài đặt</button>
     </div>
     <div id="bootMsg" class="alert"></div>
-    <div id="mascot" class="idle" aria-hidden="true"></div>
+    <div id="orb" class="orb" aria-hidden="true">
+      <div id="mascot" class="idle"></div>
+    </div>
+    <div id="bars" class="bars hidden" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <button id="mainBtn" disabled>Đang tải…</button>
     <div id="status"></div>
     <div id="sub"></div>
@@ -222,6 +245,12 @@
 
       <section>
         <h3>Cách giáo viên dạy</h3>
+        <label for="personaSel">Tính cách</label>
+        <select id="personaSel">
+          <option value="kind" selected>Hiền, tận tình (xưng mình – bạn)</option>
+          <option value="sassy">Lầy lội, hay cà khịa (xưng tao – mày)</option>
+          <option value="strict">Nghiêm khắc như cô luyện thi (xưng cô – em)</option>
+        </select>
         <label for="correctSel">Sửa lỗi</label>
         <select id="correctSel">
           <option value="now" selected>Tận tình: bắt từng lỗi, giải thích và cho nói lại</option>
@@ -343,7 +372,22 @@
     var level = Math.min(1, Math.sqrt(sum / buf.length) * 5);
     S.mouth = S.mouth * 0.55 + level * 0.45;
     mascot.style.setProperty('--m', S.playing.size ? S.mouth.toFixed(3) : 0);
+    // Vòng sáng và cột sóng: theo giọng giáo viên khi đang nói, theo micro khi đang nghe.
+    showLevel(S.playing.size ? S.mouth : (S.micLevel || 0), S.playing.size ? 'speak' : 'listen');
     S.raf = requestAnimationFrame(mouthLoop);
+  }
+
+  var bars = Array.prototype.slice.call(document.querySelectorAll('#bars i'));
+  var BAR_SHAPE = [0.45, 0.7, 0.9, 1, 0.9, 0.7, 0.45];
+  function showLevel(v, who) {
+    v = Math.max(0, Math.min(1, v));
+    $('orb').style.setProperty('--glow', v.toFixed(3));
+    $('orb').dataset.who = who;
+    var t = Date.now() / 140;
+    bars.forEach(function (b, i) {
+      var wobble = 0.75 + 0.25 * Math.sin(t + i * 1.7);
+      b.style.transform = 'scaleY(' + (0.12 + v * BAR_SHAPE[i] * wobble * 0.88).toFixed(3) + ')';
+    });
   }
 
   try { var savedM = localStorage.getItem('mascot'); if (savedM) mascotSel.value = savedM; } catch (e) {}
@@ -491,12 +535,15 @@
     } catch (e) {}
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
     searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
-    var langSel = $('langSel');
-    try {
-      var sl = localStorage.getItem('lang');
-      if (sl && langSel.querySelector('option[value="' + sl + '"]')) langSel.value = sl;
-    } catch (e) {}
-    langSel.onchange = function () { try { localStorage.setItem('lang', langSel.value); } catch (e) {} };
+    // Các ô chọn đơn giản: nhớ lựa chọn trên từng thiết bị.
+    ['langSel:lang', 'personaSel:persona'].forEach(function (pair) {
+      var p = pair.split(':'), sel = $(p[0]), key = p[1];
+      try {
+        var sv0 = localStorage.getItem(key);
+        if (sv0 && sel.querySelector('option[value="' + sv0 + '"]')) sel.value = sv0;
+      } catch (e) {}
+      sel.onchange = function () { try { localStorage.setItem(key, sel.value); } catch (e) {} };
+    });
     renderStats(b.stats);
     if (b.teacherName) {
       teacherName = b.teacherName;
@@ -637,6 +684,7 @@
     var rms = Math.sqrt(sum / (f32.length / 4));
     el.meterBar.style.width = (S.muted ? 0 : Math.min(100, Math.round(rms * 400))) + '%';
     mascot.style.setProperty('--l', S.muted ? 0 : Math.min(1, rms * 6).toFixed(2));
+    S.micLevel = S.muted ? 0 : Math.min(1, rms * 6);
 
     if (S.muted || !S.ready || !S.ws || S.ws.readyState !== 1) return;
     var bytes = new Uint8Array(f32.length * 2);
@@ -880,7 +928,8 @@
 
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
-      correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value };
+      correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
+      persona: $('personaSel').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -894,7 +943,7 @@
       S.startedAt = Date.now();
       el.setupCard.classList.add('hidden');
       el.tools.classList.remove('hidden');
-      el.meter.classList.remove('hidden');
+      $('bars').classList.remove('hidden');
       el.prepBtn.classList.toggle('hidden', req.mode !== 'ielts');
       setHideAi(req.mode === 'listening');
       el.mainBtn.disabled = false;
@@ -928,7 +977,8 @@
     try { if (S.wake) S.wake.release(); } catch (e) {}
     S = null;
     el.tools.classList.add('hidden');
-    el.meter.classList.add('hidden');
+    $('bars').classList.add('hidden');
+    showLevel(0, 'listen');
     el.setupCard.classList.remove('hidden');
   }
 

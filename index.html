@@ -123,6 +123,39 @@
   .recent span { color: var(--muted); }
   .notice { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: auto; padding: 8px 0; }
   .alert { color: var(--bad); font-size: 14px; }
+
+  /* Màn hình chính chỉ để nói; cài đặt nằm trong bảng bật lên */
+  .stage { padding-top: 12px; }
+  .lessonbar { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .pill {
+    max-width: 100%; padding: 8px 14px; font: inherit; font-size: 14px; color: var(--brand); cursor: pointer;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .wrap.locked .stage, .wrap.locked .hint { display: none; }
+  .hint { font-size: 13px; color: var(--muted); text-align: center; margin: 0 0 12px; }
+  .sheet {
+    position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .45);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .sheet-body {
+    width: 100%; max-width: 640px; max-height: 92vh; overflow-y: auto; background: var(--card);
+    border-radius: 18px 18px 0 0; padding: 0 16px calc(20px + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 700px) { .sheet { align-items: center; } .sheet-body { border-radius: 18px; } }
+  .sheet-head {
+    position: sticky; top: 0; z-index: 1; background: var(--card);
+    display: flex; align-items: center; justify-content: space-between; padding: 14px 0 8px; border-bottom: 1px solid var(--line);
+  }
+  .sheet-head h2 { margin: 0; font-size: 18px; }
+  .done {
+    padding: 8px 18px; font: 600 15px/1.2 inherit; cursor: pointer; border: 0; border-radius: 999px;
+    background: var(--brand); color: var(--brand-ink);
+  }
+  .sheet section { padding: 4px 0 8px; border-bottom: 1px solid var(--line); }
+  .sheet section:last-child { border-bottom: 0; }
+  .sheet h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 0; }
+  body.sheet-open { overflow: hidden; }
 </style>
 </head>
 <body>
@@ -137,63 +170,12 @@
     <div id="pwMsg" class="alert"></div>
   </div>
 
-  <div class="card" id="setupCard">
-    <div class="row">
-      <div>
-        <label for="mode">Chế độ học</label>
-        <select id="mode"></select>
-      </div>
-      <div>
-        <label for="subMode">Nội dung</label>
-        <select id="subMode"></select>
-      </div>
-      <div>
-        <label for="mascotSel">Nhân vật</label>
-        <select id="mascotSel">
-          <option value="rabbit">Thỏ</option>
-          <option value="dragon">Rồng</option>
-          <option value="none">Không dùng</option>
-        </select>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label for="langSel">Ngôn ngữ giảng</label>
-        <select id="langSel">
-          <option value="vi_much" selected>Song ngữ Việt – Anh</option>
-          <option value="vi_some">Chủ yếu tiếng Anh, giải thích tiếng Việt khi khó</option>
-          <option value="en">Toàn tiếng Anh</option>
-        </select>
-      </div>
-      <div>
-        <label for="voiceSel">Giọng nói</label>
-        <select id="voiceSel"></select>
-      </div>
-      <div>
-        <label for="speedSel">Tốc độ nói</label>
-        <select id="speedSel">
-          <option value="slow" selected>Chậm, rõ từng câu</option>
-          <option value="normal">Vừa phải</option>
-          <option value="fast">Nhanh như người bản xứ</option>
-        </select>
-      </div>
-      <div>
-        <label for="correctSel">Sửa lỗi</label>
-        <select id="correctSel">
-          <option value="auto" selected>Theo chế độ học</option>
-          <option value="now">Sửa ngay từng lỗi</option>
-          <option value="major">Chỉ sửa lỗi lớn</option>
-          <option value="end">Không sửa, xem ở tổng kết</option>
-        </select>
-      </div>
-    </div>
-    <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
-    <label for="topic">Chủ đề muốn luyện hôm nay (không bắt buộc)</label>
-    <input type="text" id="topic" maxlength="300" placeholder="Ví dụ: explaining a CTO PCI strategy, ordering food, my hometown…">
-    <div id="bootMsg" class="alert"></div>
-  </div>
-
   <div class="card stage">
+    <div id="setupCard" class="lessonbar">
+      <button id="lessonPill" class="pill" title="Đổi bài học">Đang tải…</button>
+      <button id="gearBtn" class="ghost" aria-label="Mở cài đặt">⚙ Cài đặt</button>
+    </div>
+    <div id="bootMsg" class="alert"></div>
     <div id="mascot" class="idle" aria-hidden="true"></div>
     <button id="mainBtn" disabled>Đang tải…</button>
     <div id="status"></div>
@@ -209,9 +191,9 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card hidden" id="logCard">
     <h2>Hội thoại</h2>
-    <div id="log"><div class="empty">Bấm nút để bắt đầu. Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.</div></div>
+    <div id="log"></div>
   </div>
 
   <div class="card hidden" id="summaryCard">
@@ -219,9 +201,69 @@
     <div id="summary"></div>
   </div>
 
-  <div class="card hidden" id="recentCard">
-    <h2>Các buổi gần đây</h2>
-    <div class="recent" id="recent"></div>
+  <div class="hint" id="hint">Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.</div>
+
+  <div id="settings" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-body">
+      <div class="sheet-head">
+        <h2 id="setTitle">Cài đặt</h2>
+        <button id="setDone" class="done">Xong</button>
+      </div>
+
+      <section>
+        <h3>Bài học</h3>
+        <label for="mode">Chế độ</label>
+        <select id="mode"></select>
+        <label for="subMode">Nội dung</label>
+        <select id="subMode"></select>
+        <label for="topic">Chủ đề cụ thể hôm nay (không bắt buộc)</label>
+        <input type="text" id="topic" maxlength="300" placeholder="Ví dụ: explaining a CTO PCI strategy, ordering food…">
+      </section>
+
+      <section>
+        <h3>Cách giáo viên dạy</h3>
+        <label for="correctSel">Sửa lỗi</label>
+        <select id="correctSel">
+          <option value="now" selected>Tận tình: bắt từng lỗi, giải thích và cho nói lại</option>
+          <option value="major">Chỉ sửa lỗi lớn</option>
+          <option value="end">Không sửa khi nói, xem ở tổng kết</option>
+        </select>
+        <label for="langSel">Ngôn ngữ giảng</label>
+        <select id="langSel">
+          <option value="vi_much" selected>Song ngữ Việt – Anh</option>
+          <option value="vi_some">Chủ yếu tiếng Anh, giải thích tiếng Việt khi khó</option>
+          <option value="en">Toàn tiếng Anh</option>
+        </select>
+      </section>
+
+      <section>
+        <h3>Giọng nói</h3>
+        <label for="voiceSel">Giọng</label>
+        <select id="voiceSel"></select>
+        <label for="speedSel">Tốc độ</label>
+        <select id="speedSel">
+          <option value="slow" selected>Chậm, rõ từng câu</option>
+          <option value="normal">Vừa phải</option>
+          <option value="fast">Nhanh như người bản xứ</option>
+        </select>
+      </section>
+
+      <section>
+        <h3>Khác</h3>
+        <label for="mascotSel">Nhân vật</label>
+        <select id="mascotSel">
+          <option value="rabbit">Thỏ</option>
+          <option value="dragon">Rồng</option>
+          <option value="none">Không dùng</option>
+        </select>
+        <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
+      </section>
+
+      <section id="recentCard" class="hidden">
+        <h3>Các buổi gần đây</h3>
+        <div class="recent" id="recent"></div>
+      </section>
+    </div>
   </div>
 
   <div class="notice">Gói miễn phí của Gemini: Google có thể dùng nội dung hội thoại để cải thiện sản phẩm. Không nói thông tin nhận dạng bệnh nhân.</div>
@@ -354,6 +396,11 @@
     var m = modeById(el.mode.value);
     el.subMode.innerHTML = '';
     (m ? m.subs : []).forEach(function (s) { el.subMode.add(new Option(s.label, s.id)); });
+    try {
+      var savedSub = localStorage.getItem('sub:' + el.mode.value);
+      if (savedSub && el.subMode.querySelector('option[value="' + savedSub + '"]')) el.subMode.value = savedSub;
+    } catch (e) {}
+    updatePill();
   }
 
   function renderRecent(list) {
@@ -472,6 +519,34 @@
   el.mode.addEventListener('change', function () {
     fillSubModes();
     try { localStorage.setItem('mode', el.mode.value); } catch (e) {}
+  });
+  el.subMode.addEventListener('change', function () {
+    updatePill();
+    try { localStorage.setItem('sub:' + el.mode.value, el.subMode.value); } catch (e) {}
+  });
+
+  // ---- bảng cài đặt
+  function updatePill() {
+    var m = boot && modeById(el.mode.value);
+    var s = el.subMode.options[el.subMode.selectedIndex];
+    $('lessonPill').textContent = m ? m.label + (s ? ' · ' + s.text : '') : 'Chọn bài học';
+  }
+  function openSettings() {
+    if (!boot || S) return;
+    $('settings').classList.remove('hidden');
+    document.body.classList.add('sheet-open');
+  }
+  function closeSettings() {
+    $('settings').classList.add('hidden');
+    document.body.classList.remove('sheet-open');
+    updatePill();
+  }
+  $('gearBtn').addEventListener('click', openSettings);
+  $('lessonPill').addEventListener('click', openSettings);
+  $('setDone').addEventListener('click', closeSettings);
+  $('settings').addEventListener('click', function (ev) { if (ev.target === this) closeSettings(); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('settings').classList.contains('hidden')) closeSettings();
   });
 
   // ------------------------------------------------------------ hiển thị chữ
@@ -780,6 +855,9 @@
     el.mainBtn.disabled = true;
     el.summaryCard.classList.add('hidden');
     el.log.innerHTML = '';
+    $('logCard').classList.remove('hidden');
+    $('hint').classList.add('hidden');
+    closeSettings();
     setStatus('Đang kết nối…', 'warn', 'Xin quyền micro và mở phiên với giáo viên');
 
     S = {

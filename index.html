@@ -89,9 +89,39 @@
   /* Mèo: tai nghe nhún theo giọng */
   #mascot[data-kind="cat"] .cup { transform-origin: 50% 50%; transform: scale(calc(1 + var(--m) * .14)); }
   /* Ảnh riêng: tròn, thở nhẹ khi chờ, phập phồng theo giọng khi nói */
-  #mascot img.photo { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; animation: breathe 4s ease-in-out infinite; }
-  #mascot[data-kind="photo"].speak img.photo { animation: none; transform: scale(calc(1 + var(--m) * .07)); }
-  #mascot[data-kind="photo"].think img.photo { animation: tilt 1.6s ease-in-out infinite; }
+  #mascot .pwrap {
+    --mx: .5; --my: .6; --mw: .12; --lip: #a8505a;
+    position: relative; width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+    animation: breathe 4s ease-in-out infinite;
+  }
+  #mascot img.photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+  #mascot[data-kind="photo"].speak .pwrap { animation: none; transform: translateY(calc(var(--m) * 2px)) scale(calc(1 + var(--m) * .03)); }
+  #mascot[data-kind="photo"].think .pwrap { animation: tilt 1.6s ease-in-out infinite; }
+  /* Khuôn miệng vẽ chồng: khép lại thì vô hình, mở ra theo --m */
+  .pmouth, .markdot::after {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 30%, #6b1d26 0%, #2a080c 70%);
+    box-shadow: 0 0 0 1.5px var(--lip, #a8505a), inset 0 2px 2px rgba(0, 0, 0, .35);
+  }
+  .pmouth {
+    left: calc(var(--mx) * 100%); top: calc(var(--my) * 100%);
+    width: calc(var(--mw) * 100%); height: calc(var(--mw) * 62%);
+    transform: translate(-50%, -50%) scaleY(var(--m)); opacity: min(1, calc(var(--m) * 5));
+  }
+  .pmouth::before, .markdot::before {
+    content: ''; position: absolute; left: 14%; right: 14%; top: 4%; height: 26%;
+    background: #f3efea; border-radius: 0 0 45% 45%;
+  }
+  .markbox { margin-top: 10px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; }
+  .markarea { position: relative; width: min(100%, 300px); aspect-ratio: 1; margin: 10px auto; border-radius: 12px; overflow: hidden; cursor: crosshair; }
+  .markarea img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .markdot {
+    --m: 0; position: absolute; aspect-ratio: 1 / .62; transform: translate(-50%, -50%);
+    outline: 2px dashed #ffd84a; outline-offset: 3px; border-radius: 50%; pointer-events: none;
+  }
+  .markdot::after { content: ''; inset: 0; transform: scaleY(var(--m)); opacity: min(1, calc(var(--m) * 5)); }
+  .markdot::before { z-index: 1; transform: scaleY(var(--m)); opacity: min(1, calc(var(--m) * 5)); }
+  #markSize { width: 100%; }
   @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
   .photo-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .tip { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
@@ -313,8 +343,19 @@
         <input type="text" id="nameInput" maxlength="30" autocomplete="off">
         <div id="photoRow" class="photo-row">
           <button id="photoBtn" class="ghost" type="button">Chọn ảnh riêng…</button>
-          <button id="photoClear" class="ghost hidden" type="button">Bỏ ảnh, dùng hình vẽ</button>
+          <button id="photoClear" class="ghost hidden" type="button">Bỏ ảnh đã chọn</button>
           <input type="file" id="photoFile" accept="image/*" class="hidden">
+          <button id="markBtn" class="ghost hidden" type="button">Chỉnh vị trí miệng</button>
+        </div>
+        <div id="markBox" class="markbox hidden">
+          <div class="tip">Chạm đúng vào miệng trong ảnh, rồi kéo thanh để miệng vẽ vừa với miệng thật. Miệng sẽ mở thử vài lần để bạn xem.</div>
+          <div id="markArea" class="markarea">
+            <img id="markImg" alt="">
+            <i id="markDot" class="markdot"></i>
+          </div>
+          <label for="markSize">Cỡ miệng</label>
+          <input type="range" id="markSize" min="5" max="25" step="1">
+          <button id="markDone" class="ghost" type="button">Xong</button>
         </div>
         <div class="tip">Ảnh chỉ lưu trên thiết bị này, không gửi lên mạng. Mỗi điện thoại hoặc máy tính chọn ảnh một lần.</div>
       </section>
@@ -459,27 +500,117 @@
   function load(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function getName(kind) { return load('name:' + kind) || DEFAULT_NAMES[kind] || configName; }
 
+  // Ảnh có sẵn trong app cho một số nhân vật; ảnh người học tự chọn trên máy được ưu tiên hơn.
+  var BUILTIN_PHOTOS = { lucy: 'lucy.jpg' };
+
   function renderMascot() {
     var kind = mascotSel.value;
-    var photo = MASCOTS[kind] ? load('photo:' + kind) : '';
+    var own = MASCOTS[kind] ? load('photo:' + kind) : '';
+    var photo = own || (MASCOTS[kind] && BUILTIN_PHOTOS[kind]) || '';
     mascot.innerHTML = '';
     if (photo) {
+      // Ảnh + khuôn miệng vẽ chồng đúng vị trí miệng trong ảnh, mở theo giọng (--m).
+      var wrap = document.createElement('div');
+      wrap.className = 'pwrap';
       var img = document.createElement('img');
       img.className = 'photo';
       img.alt = '';
+      img.onerror = function () { // ảnh có sẵn bị thiếu: quay về hình vẽ
+        if (mascotSel.value !== kind) return;
+        mascot.innerHTML = MASCOTS[kind] || '';
+        mascot.dataset.kind = kind;
+        $('markBtn').classList.add('hidden');
+      };
       img.src = photo;
-      mascot.appendChild(img);
+      var mouthEl = document.createElement('i');
+      mouthEl.className = 'pmouth';
+      wrap.appendChild(img);
+      wrap.appendChild(mouthEl);
+      mascot.appendChild(wrap);
+      applyMouth(wrap, kind, photo);
     } else {
       mascot.innerHTML = MASCOTS[kind] || '';
     }
     mascot.dataset.kind = photo ? 'photo' : kind;
     mascot.classList.toggle('none', !MASCOTS[kind]);
     $('photoRow').classList.toggle('hidden', !MASCOTS[kind]);
-    $('photoClear').classList.toggle('hidden', !photo);
+    $('photoClear').classList.toggle('hidden', !own);
+    $('markBtn').classList.toggle('hidden', !photo);
+    $('markBox').classList.add('hidden');
     $('nameInput').value = getName(kind);
     $('nameInput').placeholder = DEFAULT_NAMES[kind] || configName;
     applyName();
   }
+  // ---- vị trí miệng trong ảnh: x, y là tâm miệng, w là bề rộng miệng; đều tính theo tỉ lệ khung ảnh vuông
+  var DEFAULT_MOUTH = { lucy: [0.505, 0.433, 0.09] };
+  function getMouth(kind) {
+    var s = load('mouth:' + kind);
+    if (s) {
+      var p = s.split(',').map(Number);
+      if (p.length === 3 && p.every(function (v) { return v >= 0 && v <= 1; })) return p;
+    }
+    // Ảnh tự chọn chưa đánh dấu thì đoán: mặt chân dung thường có miệng ở khoảng 60% chiều cao.
+    return load('photo:' + kind) ? [0.5, 0.6, 0.12] : (DEFAULT_MOUTH[kind] || [0.5, 0.6, 0.12]);
+  }
+  function applyMouth(wrap, kind, src) {
+    var p = getMouth(kind);
+    wrap.style.setProperty('--mx', p[0]);
+    wrap.style.setProperty('--my', p[1]);
+    wrap.style.setProperty('--mw', p[2]);
+    // Lấy màu môi thật ở ngay dưới tâm miệng để viền miệng khớp với ảnh.
+    var im = new Image();
+    im.onload = function () {
+      try {
+        var c = document.createElement('canvas');
+        c.width = c.height = 64;
+        var g = c.getContext('2d');
+        g.drawImage(im, 0, 0, 64, 64);
+        var d = g.getImageData(Math.round(p[0] * 63), Math.min(63, Math.round(p[1] * 63) + 1), 1, 1).data;
+        wrap.style.setProperty('--lip', 'rgb(' + Math.round(d[0] * 0.8) + ',' + Math.round(d[1] * 0.7) + ',' + Math.round(d[2] * 0.7) + ')');
+      } catch (e) { /* ảnh khác nguồn: giữ màu môi mặc định */ }
+    };
+    im.src = src;
+  }
+
+  // Bảng đánh dấu miệng: chạm vào miệng trong ảnh, kéo thanh để chỉnh cỡ miệng, xem thử ngay.
+  var demoTimer = null;
+  function openMarker() {
+    var kind = mascotSel.value;
+    var src = load('photo:' + kind) || BUILTIN_PHOTOS[kind];
+    if (!src) return;
+    var p = getMouth(kind);
+    $('markImg').src = src;
+    $('markSize').value = Math.round(p[2] * 100);
+    placeDot(p);
+    $('markBox').classList.remove('hidden');
+    demoMouth();
+  }
+  function placeDot(p) {
+    var dot = $('markDot');
+    dot.style.left = (p[0] * 100) + '%';
+    dot.style.top = (p[1] * 100) + '%';
+    dot.style.width = (p[2] * 100) + '%';
+  }
+  function saveMouth(p) {
+    store('mouth:' + mascotSel.value, p.map(function (v) { return v.toFixed(3); }).join(','));
+    placeDot(p);
+    renderMascot();
+    $('markBox').classList.remove('hidden');
+    demoMouth();
+  }
+  /** Cho miệng mở ra khép lại khoảng 2 giây để xem vị trí đã đúng chưa. */
+  function demoMouth() {
+    clearInterval(demoTimer);
+    var t0 = Date.now();
+    demoTimer = setInterval(function () {
+      var t = (Date.now() - t0) / 1000;
+      var v = t > 2.2 ? 0 : Math.abs(Math.sin(t * 7)) * 0.9;
+      mascot.style.setProperty('--m', v.toFixed(3));
+      $('markDot').style.setProperty('--m', v.toFixed(3));
+      if (t > 2.2) clearInterval(demoTimer);
+    }, 40);
+  }
+
   function applyName() {
     teacherName = getName(mascotSel.value);
     document.querySelector('h1').textContent = 'Luyện nói tiếng Anh với ' + teacherName;
@@ -501,8 +632,11 @@
       URL.revokeObjectURL(url);
       if (!store('photo:' + mascotSel.value, c.toDataURL('image/jpeg', 0.85))) {
         alertBoot('Không lưu được ảnh trên trình duyệt này (bộ nhớ đầy hoặc đang ở chế độ riêng tư).');
+        return;
       }
+      store('mouth:' + mascotSel.value, '');
       renderMascot();
+      openMarker(); // ảnh mới: mời đánh dấu miệng ngay
     };
     im.onerror = function () { URL.revokeObjectURL(url); alertBoot('Không đọc được ảnh này, hãy thử ảnh JPG hoặc PNG khác.'); };
     im.src = url;
@@ -563,7 +697,25 @@
   });
   $('photoBtn').addEventListener('click', function () { $('photoFile').click(); });
   $('photoFile').addEventListener('change', function () { pickPhoto(this.files && this.files[0]); this.value = ''; });
-  $('photoClear').addEventListener('click', function () { store('photo:' + mascotSel.value, ''); renderMascot(); });
+  $('photoClear').addEventListener('click', function () {
+    store('photo:' + mascotSel.value, '');
+    store('mouth:' + mascotSel.value, '');
+    renderMascot();
+  });
+  $('markBtn').addEventListener('click', openMarker);
+  $('markDone').addEventListener('click', function () { $('markBox').classList.add('hidden'); });
+  $('markArea').addEventListener('click', function (ev) {
+    var r = this.getBoundingClientRect();
+    var p = getMouth(mascotSel.value);
+    p[0] = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    p[1] = Math.max(0, Math.min(1, (ev.clientY - r.top) / r.height));
+    saveMouth(p);
+  });
+  $('markSize').addEventListener('input', function () {
+    var p = getMouth(mascotSel.value);
+    p[2] = Number(this.value) / 100;
+    saveMouth(p);
+  });
 
   // ------------------------------------------------------------ gọi server
 

@@ -542,7 +542,7 @@
     applyName();
   }
   // ---- vị trí miệng trong ảnh: x, y là tâm miệng, w là bề rộng miệng; đều tính theo tỉ lệ khung ảnh vuông
-  var DEFAULT_MOUTH = { lucy: [0.505, 0.433, 0.09] };
+  var DEFAULT_MOUTH = { lucy: [0.498, 0.432, 0.085] }; // đo trên lucy.jpg: giữa hai môi
   function getMouth(kind) {
     var s = load('mouth:' + kind);
     if (s) {

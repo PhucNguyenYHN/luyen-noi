@@ -74,6 +74,18 @@
   @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
   @keyframes flapL { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(14deg); } }
   @keyframes flapR { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+  /* Mặt cười kính đen: miệng luôn cười, há rộng hơn khi nói; nhướn mày khi nghe; tay chỉnh kính khi nói */
+  #mascot[data-kind="cool"] .mouth { transform: scaleY(calc(0.72 + var(--m) * 0.55)); }
+  #mascot[data-kind="cool"] .brow { transition: transform .12s; }
+  #mascot[data-kind="cool"].listen .brow { transform: translateY(calc(var(--l) * -9px)); }
+  #mascot[data-kind="cool"].think .brow.l { transform: translateY(-7px) rotate(-8deg); }
+  #mascot[data-kind="cool"].speak .brow { animation: browBob .45s ease-in-out infinite; }
+  #mascot[data-kind="cool"] .hand { transform-origin: 0% 50%; }
+  #mascot[data-kind="cool"].speak .hand { animation: adjust 1.4s ease-in-out infinite; }
+  #mascot[data-kind="cool"] .glint { animation: glint 5s ease-in-out infinite; }
+  @keyframes browBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  @keyframes adjust { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -3px) rotate(-4deg); } }
+  @keyframes glint { 0%, 80%, 100% { opacity: 1; } 88% { opacity: .2; } }
   @media (prefers-reduced-motion: reduce) { #mascot * { animation: none !important; } }
 
   #mainBtn {
@@ -283,6 +295,7 @@
         <select id="mascotSel">
           <option value="rabbit">Thỏ</option>
           <option value="dragon">Rồng</option>
+          <option value="cool">Mặt cười kính đen</option>
           <option value="none">Không dùng</option>
         </select>
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
@@ -347,6 +360,33 @@
       '<ellipse cx="90" cy="134" rx="3" ry="4" fill="#2f9a5e"/><ellipse cx="110" cy="134" rx="3" ry="4" fill="#2f9a5e"/>' +
       '<ellipse class="part mouth" cx="100" cy="148" rx="13" ry="11" fill="#b3384f"/>' +
       '<path class="part flame" d="M100 176 Q88 190 100 204 Q112 190 100 176Z" fill="#ff9f43"/>' +
+      '</g></svg>',
+    cool:
+      '<svg viewBox="0 0 200 200"><defs>' +
+      '<radialGradient id="cfFace" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff7a8"/><stop offset=".45" stop-color="#ffd84a"/><stop offset="1" stop-color="#f0a500"/></radialGradient>' +
+      '<radialGradient id="cfLens" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#3a4d6e"/><stop offset=".6" stop-color="#16213a"/><stop offset="1" stop-color="#070b14"/></radialGradient>' +
+      '<linearGradient id="cfBrow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8640f"/><stop offset="1" stop-color="#7a3a05"/></linearGradient>' +
+      '</defs><g class="part body">' +
+      '<circle cx="100" cy="106" r="80" fill="url(#cfFace)"/>' +
+      '<ellipse cx="78" cy="56" rx="26" ry="12" fill="#fff" opacity=".28"/>' +
+      '<rect class="part brow l" x="54" y="38" width="36" height="13" rx="6" fill="url(#cfBrow)"/>' +
+      '<rect class="part brow r" x="110" y="38" width="36" height="13" rx="6" fill="url(#cfBrow)"/>' +
+      '<path d="M22 80 L48 78 M152 78 L178 80" stroke="#0f1a2b" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M94 78 Q100 72 106 78" fill="none" stroke="#0f1a2b" stroke-width="6" stroke-linecap="round"/>' +
+      '<ellipse cx="72" cy="84" rx="26" ry="22" fill="url(#cfLens)" stroke="#0f1a2b" stroke-width="6"/>' +
+      '<ellipse cx="128" cy="84" rx="26" ry="22" fill="url(#cfLens)" stroke="#0f1a2b" stroke-width="6"/>' +
+      '<g class="part glint"><path d="M58 76 Q64 68 74 68" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/>' +
+      '<path d="M114 76 Q120 68 130 68" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/></g>' +
+      '<g class="part mouth">' +
+      '<path d="M48 122 Q100 136 152 122 Q146 176 100 178 Q54 176 48 122 Z" fill="#5b1616"/>' +
+      '<path d="M52 124 Q100 137 148 124 L145 142 Q100 153 55 142 Z" fill="#fff"/>' +
+      '<path d="M66 162 Q100 172 134 162 L129 170 Q100 179 71 170 Z" fill="#fff"/>' +
+      '<path d="M66 128 V145 M78 131 V148 M90 133 V150 M100 133 V151 M110 133 V150 M122 131 V148 M134 128 V145" stroke="#ddd" stroke-width="1.5"/>' +
+      '<path d="M48 122 Q100 136 152 122" fill="none" stroke="#c98a00" stroke-width="3" stroke-linecap="round"/>' +
+      '</g>' +
+      '<g class="part hand"><ellipse cx="30" cy="74" rx="17" ry="15" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/>' +
+      '<rect x="36" y="64" width="20" height="9" rx="4.5" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/>' +
+      '<rect x="36" y="76" width="18" height="9" rx="4.5" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/></g>' +
       '</g></svg>'
   };
   var mascot = $('mascot');
@@ -355,6 +395,7 @@
   function renderMascot() {
     var kind = mascotSel.value;
     mascot.innerHTML = MASCOTS[kind] || '';
+    mascot.dataset.kind = kind;
     mascot.classList.toggle('none', !MASCOTS[kind]);
   }
   function setMascot(state) { // idle | think | listen | speak

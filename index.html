@@ -82,7 +82,7 @@
   #mascot[data-kind="cool"].speak .brow { animation: browBob .45s ease-in-out infinite; }
   #mascot[data-kind="cool"] .hand { transform-origin: 0% 50%; }
   #mascot[data-kind="cool"].speak .hand { animation: adjust 1.4s ease-in-out infinite; }
-  #mascot[data-kind="cool"] .glint { animation: glint 5s ease-in-out infinite; }
+  #mascot[data-kind="cool"] .glint, #mascot[data-kind="coolbunny"] .glint { animation: glint 5s ease-in-out infinite; }
   @keyframes browBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
   @keyframes adjust { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2px, -3px) rotate(-4deg); } }
   @keyframes glint { 0%, 80%, 100% { opacity: 1; } 88% { opacity: .2; } }
@@ -211,12 +211,73 @@
   .sheet section:last-child { border-bottom: 0; }
   .sheet h3 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 0; }
   body.sheet-open { overflow: hidden; }
+
+  /* Màn hình chính tối giản: thanh trên, nhân vật, phụ đề, nút. Mọi thứ khác ở Menu. */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; }
+  .topbar h1 { margin: 0; font-size: 17px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .iconbtn {
+    flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font: 600 14px/1.2 inherit; cursor: pointer;
+    color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  }
+  .wrap.locked .topbar .iconbtn { visibility: hidden; }
+  .stage { background: transparent; border: 0; padding: 4px 0 0; }
+  .stage .lessonbar { margin-bottom: 2px; }
+  #cc {
+    min-height: 92px; max-width: 560px; margin: 6px auto 12px; padding: 10px 14px; text-align: left;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    font-size: 18px; line-height: 1.45; display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  #cc small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); }
+  #cc.user small { color: var(--ok); } #cc.ai small { color: var(--brand); }
+  /* Cao cố định, căn đáy: chữ mới nhất luôn ở dòng dưới, chữ cũ trôi lên và khuất */
+  #cc span { display: flex; flex-direction: column; justify-content: flex-end; max-height: 4.35em; overflow: hidden; }
+  #cc.idle span { height: auto; }
+  #cc.blur span { filter: blur(6px); }
+  #cc.idle { color: var(--muted); font-size: 15px; text-align: center; justify-content: center; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 22px; }
+  .roundbtn {
+    width: 56px; height: 56px; border-radius: 50%; font-size: 22px; cursor: pointer;
+    color: var(--ink); background: var(--card); border: 1px solid var(--line);
+  }
+  .roundbtn.active { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .roundbtn.ghostspace { visibility: hidden; }
+  #status { margin: 10px 0 0; font-size: 15px; }
+  #sub { font-size: 12.5px; }
+  .sheet .tools { justify-content: flex-start; }
+  details.logbox summary { cursor: pointer; padding: 10px 0; font-size: 15px; color: var(--brand); }
+  details.logbox #log { max-height: 55vh; }
+  .sheet .stats { margin: 10px 0 4px; }
+  .sheet-notes { font-size: 12.5px; color: var(--muted); padding: 10px 0 0; }
+  .sheet-notes div { margin-bottom: 6px; }
+  .insession-only { display: none; }
+  body.in-session .insession-only { display: block; }
+  body.in-session .setup-only { display: none; }
+
+  /* Cài app: Android cài thẳng; iPhone hiện hướng dẫn có mũi tên chỉ nút cần bấm */
+  .topbar .right { display: flex; gap: 8px; flex: none; }
+  #installBtn { color: var(--brand); border-color: var(--brand); }
+  .guide { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .6); display: flex; align-items: flex-end; justify-content: center; }
+  .guide-card {
+    width: 100%; max-width: 420px; margin: 0 12px calc(78px + env(safe-area-inset-bottom)); padding: 16px 18px;
+    background: var(--card); border-radius: 18px; position: relative;
+  }
+  .guide-card h2 { font-size: 18px; margin: 0 0 10px; }
+  .guide-card ol { margin: 0 0 12px; padding-left: 22px; font-size: 16px; }
+  .guide-card li { margin: 8px 0; }
+  .guide-card .k { display: inline-block; padding: 1px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-weight: 600; }
+  .guide-arrow { position: absolute; bottom: -54px; right: 34px; font-size: 40px; color: #fff; animation: nudge 1s ease-in-out infinite; }
+  @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Luyện nói tiếng Anh</h1>
-  <div id="stats" class="stats hidden"></div>
+  <div class="topbar">
+    <h1>Luyện nói tiếng Anh</h1>
+    <div class="right">
+      <button id="installBtn" class="iconbtn hidden" aria-label="Cài app lên màn hình chính">📲 Cài app</button>
+      <button id="gearBtn" class="iconbtn" aria-label="Mở menu">☰ Menu</button>
+    </div>
+  </div>
 
   <div class="card hidden" id="lockCard">
     <h2>Nhập mật khẩu</h2>
@@ -228,30 +289,21 @@
   <div class="card stage">
     <div id="setupCard" class="lessonbar">
       <button id="lessonPill" class="pill" title="Đổi bài học">Đang tải…</button>
-      <button id="gearBtn" class="ghost" aria-label="Mở cài đặt">⚙ Cài đặt</button>
     </div>
     <div id="bootMsg" class="alert"></div>
     <div id="orb" class="orb" aria-hidden="true">
       <div id="mascot" class="idle"></div>
     </div>
     <div id="bars" class="bars hidden" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <button id="mainBtn" disabled>Đang tải…</button>
+    <div id="cc" class="idle" aria-live="polite"><span>Bấm nút để bắt đầu nói chuyện</span></div>
+    <div class="controls">
+      <button id="muteBtn" class="roundbtn ghostspace" title="Tạm tắt micro" aria-label="Tắt micro">🎙️</button>
+      <button id="mainBtn" disabled>Đang tải…</button>
+      <button id="toolsBtn" class="roundbtn ghostspace" title="Công cụ và hội thoại" aria-label="Mở công cụ và hội thoại">💬</button>
+    </div>
     <div id="status"></div>
     <div id="sub"></div>
     <div id="meter" class="hidden"><i></i></div>
-    <div class="tools hidden" id="tools">
-      <button id="muteBtn" title="Tạm tắt micro">Tắt micro</button>
-      <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
-      <button id="slowBtn" title="Nhờ nói lại câu vừa rồi, chậm hơn">Nói chậm lại</button>
-      <button id="transBtn" title="Nhờ dịch câu vừa rồi sang tiếng Việt">Dịch câu vừa rồi</button>
-      <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
-      <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
-    </div>
-  </div>
-
-  <div class="card hidden" id="logCard">
-    <h2>Hội thoại</h2>
-    <div id="log"></div>
   </div>
 
   <div class="card hidden" id="summaryCard">
@@ -259,16 +311,40 @@
     <div id="summary"></div>
   </div>
 
-  <div class="hint" id="hint">Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.</div>
 
   <div id="settings" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="sheet-body">
       <div class="sheet-head">
-        <h2 id="setTitle">Cài đặt</h2>
+        <h2 id="setTitle">Menu</h2>
         <button id="setDone" class="done">Xong</button>
       </div>
 
-      <section>
+      <section class="insession-only">
+        <h3>Trong buổi học</h3>
+        <div class="tools" id="tools">
+          <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
+          <button id="slowBtn" title="Nhờ nói lại câu vừa rồi, chậm hơn">Nói chậm lại</button>
+          <button id="transBtn" title="Nhờ dịch câu vừa rồi sang tiếng Việt">Dịch câu vừa rồi</button>
+          <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
+          <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
+        </div>
+        <div class="tip">Muốn đổi bài học, giọng hay nhân vật thì kết thúc buổi này trước.</div>
+      </section>
+
+      <section id="logSec" class="hidden">
+        <h3>Hội thoại</h3>
+        <details class="logbox" id="logBox">
+          <summary id="logSum">Xem toàn bộ hội thoại</summary>
+          <div id="log"></div>
+        </details>
+      </section>
+
+      <section id="progressSec" class="setup-only hidden">
+        <h3>Tiến độ</h3>
+        <div id="stats" class="stats"></div>
+      </section>
+
+      <section class="setup-only">
         <h3>Bài học</h3>
         <label for="mode">Chế độ</label>
         <select id="mode"></select>
@@ -276,9 +352,14 @@
         <select id="subMode"></select>
         <label for="topic">Chủ đề cụ thể hôm nay (không bắt buộc)</label>
         <input type="text" id="topic" maxlength="300" placeholder="Ví dụ: explaining a CTO PCI strategy, ordering food…">
+        <div id="kidRow" class="hidden">
+          <label for="kidName">Tên bé (giáo viên sẽ gọi tên này)</label>
+          <input type="text" id="kidName" maxlength="30" autocomplete="off" placeholder="Ví dụ: Bin, Na, Su…">
+          <div class="tip">Chế độ cho bé tự dùng lời dạy riêng: nói chậm, xen tiếng Việt và tiếng Anh, không chê bé nói sai, chờ bé nói lâu hơn và chiều theo khi bé chen ngang. Bố mẹ nên ngồi cạnh bé.</div>
+        </div>
       </section>
 
-      <section>
+      <section id="teachSec" class="setup-only">
         <h3>Cách giáo viên dạy</h3>
         <label for="personaSel">Tính cách</label>
         <select id="personaSel">
@@ -300,7 +381,7 @@
         </select>
       </section>
 
-      <section>
+      <section class="setup-only">
         <h3>Giọng nói</h3>
         <label for="voiceSel">Giọng</label>
         <select id="voiceSel"></select>
@@ -312,11 +393,11 @@
         </select>
       </section>
 
-      <section>
+      <section class="setup-only">
         <h3>Nhân vật</h3>
         <label for="mascotSel">Hình nhân vật</label>
         <select id="mascotSel">
-          <option value="lucy">Lucy (cô gái)</option>
+          <option value="coolbunny">Thỏ đeo kính đen</option>
           <option value="cat">Mèo đeo tai nghe</option>
           <option value="rabbit">Thỏ</option>
           <option value="dragon">Rồng</option>
@@ -333,7 +414,7 @@
         <div class="tip">Ảnh chỉ lưu trên thiết bị này, không gửi lên mạng. Mỗi điện thoại hoặc máy tính chọn ảnh một lần.</div>
       </section>
 
-      <section>
+      <section id="otherSec" class="setup-only">
         <h3>Khác</h3>
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
       </section>
@@ -342,10 +423,27 @@
         <h3>Các buổi gần đây</h3>
         <div class="recent" id="recent"></div>
       </section>
+
+      <div class="sheet-notes">
+        <div id="hint">Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.</div>
+        <div>Gói miễn phí của Gemini: Google có thể dùng nội dung hội thoại để cải thiện sản phẩm. Không nói thông tin nhận dạng bệnh nhân.</div>
+      </div>
     </div>
   </div>
+</div>
 
-  <div class="notice">Gói miễn phí của Gemini: Google có thể dùng nội dung hội thoại để cải thiện sản phẩm. Không nói thông tin nhận dạng bệnh nhân.</div>
+<div id="iosGuide" class="guide hidden" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="guide-card">
+    <h2 id="guideTitle">Cài app lên iPhone</h2>
+    <ol>
+      <li>Bấm nút <span class="k">•••</span> hoặc nút Chia sẻ <span class="k">⬆︎</span> ở thanh địa chỉ (mũi tên chỉ xuống).</li>
+      <li>Chọn <span class="k">Chia sẻ</span> nếu có, rồi kéo xuống chọn <span class="k">Thêm vào MH chính</span>.</li>
+      <li>Bấm <span class="k">Thêm</span>. Biểu tượng thỏ sẽ nằm trên màn hình chính, mở ra là toàn màn hình.</li>
+    </ol>
+    <div class="tip">Apple không cho trang web tự cài, nên trên iPhone cần 3 chạm này một lần duy nhất.</div>
+    <button id="guideClose" class="done" style="margin-top:12px">Đã hiểu</button>
+    <div class="guide-arrow" aria-hidden="true">⬇</div>
+  </div>
 </div>
 
 <script>
@@ -370,21 +468,23 @@
   // ------------------------------------------------------------ nhân vật hoạt hình
 
   var MASCOTS = {
-    lucy:
-      '<svg viewBox="0 0 200 200"><g class="part body">' +
-      '<path d="M40 112 Q34 28 100 24 Q166 28 160 112 L168 190 Q100 204 32 190 Z" fill="#3b2a22"/>' +
-      '<path d="M42 200 Q48 166 100 164 Q152 166 158 200 Z" fill="#efe6d8"/>' +
-      '<rect x="89" y="146" width="22" height="24" fill="#f1d0bf"/>' +
-      '<ellipse cx="100" cy="104" rx="44" ry="52" fill="#f8e0d2"/>' +
-      '<path d="M55 96 Q56 38 100 36 Q144 38 145 96 Q134 70 120 64 Q112 82 100 84 Q90 68 78 68 Q64 76 55 96 Z" fill="#3b2a22"/>' +
-      '<path d="M56 92 Q48 140 58 182 L70 182 Q62 140 66 98 Z M144 92 Q152 140 142 182 L130 182 Q138 140 134 98 Z" fill="#3b2a22"/>' +
-      '<g class="part eye"><ellipse cx="82" cy="107" rx="7" ry="8" fill="#2a1d18"/><circle cx="84.5" cy="104" r="2.3" fill="#fff"/>' +
-      '<path d="M72 100 Q82 93 92 100" stroke="#2a1d18" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
-      '<g class="part eye"><ellipse cx="118" cy="107" rx="7" ry="8" fill="#2a1d18"/><circle cx="120.5" cy="104" r="2.3" fill="#fff"/>' +
-      '<path d="M108 100 Q118 93 128 100" stroke="#2a1d18" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
-      '<ellipse cx="73" cy="125" rx="9" ry="5" fill="#f4a5a8" opacity=".55"/><ellipse cx="127" cy="125" rx="9" ry="5" fill="#f4a5a8" opacity=".55"/>' +
-      '<path d="M100 113 Q97 122 101 124" stroke="#d9a68f" stroke-width="2" fill="none" stroke-linecap="round"/>' +
-      '<ellipse class="part mouth" cx="100" cy="137" rx="8" ry="5.5" fill="#c9485b"/>' +
+    coolbunny:
+      '<svg viewBox="0 0 200 200"><defs>' +
+      '<linearGradient id="cbLens" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d3a52"/><stop offset="1" stop-color="#06080d"/></linearGradient>' +
+      '</defs><g class="part body">' +
+      '<g class="part ear l"><ellipse cx="72" cy="50" rx="19" ry="48" fill="#fafafc" stroke="#cfd6de" stroke-width="3" transform="rotate(-8 72 50)"/><ellipse cx="72" cy="54" rx="8" ry="32" fill="#ffb8c9" transform="rotate(-8 72 54)"/></g>' +
+      '<g class="part ear r"><ellipse cx="128" cy="50" rx="19" ry="48" fill="#fafafc" stroke="#cfd6de" stroke-width="3" transform="rotate(8 128 50)"/><ellipse cx="128" cy="54" rx="8" ry="32" fill="#ffb8c9" transform="rotate(8 128 54)"/></g>' +
+      '<ellipse cx="100" cy="132" rx="66" ry="56" fill="#fafafc" stroke="#cfd6de" stroke-width="3"/>' +
+      '<ellipse cx="100" cy="152" rx="30" ry="20" fill="#eef0f4"/>' +
+      '<ellipse cx="58" cy="150" rx="10" ry="6" fill="#ffb3c4" opacity=".6"/><ellipse cx="142" cy="150" rx="10" ry="6" fill="#ffb3c4" opacity=".6"/>' +
+      '<path d="M36 118 L50 116 M150 116 L164 118" stroke="#111" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M94 116 Q100 111 106 116" fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M50 108 H94 Q96 108 95 112 L91 128 Q89 134 82 134 H62 Q55 134 53 128 L49 112 Q48 108 50 108 Z" fill="url(#cbLens)" stroke="#111" stroke-width="4" stroke-linejoin="round"/>' +
+      '<path d="M150 108 H106 Q104 108 105 112 L109 128 Q111 134 118 134 H138 Q145 134 147 128 L151 112 Q152 108 150 108 Z" fill="url(#cbLens)" stroke="#111" stroke-width="4" stroke-linejoin="round"/>' +
+      '<g class="part glint"><path d="M58 114 L70 114" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/><path d="M114 114 L126 114" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/></g>' +
+      '<path d="M94 142 Q100 149 106 142 Q100 137 94 142Z" fill="#ff8fa8"/>' +
+      '<path d="M100 148 V153 M86 156 Q94 162 100 154 Q108 163 118 152" fill="none" stroke="#6d7580" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<ellipse class="part mouth" cx="101" cy="163" rx="9" ry="8" fill="#b3384f"/>' +
       '</g></svg>',
     cat:
       '<svg viewBox="0 0 200 200"><g class="part body">' +
@@ -467,14 +567,14 @@
   var mascotSel = $('mascotSel');
 
   // Mỗi nhân vật có tên riêng (sửa được) và có thể thay bằng ảnh riêng; cả hai lưu trên thiết bị này.
-  var DEFAULT_NAMES = { lucy: 'Lucy', rabbit: 'Bunny', dragon: 'Rex', cool: 'Sunny', cat: 'Mochi' };
+  var DEFAULT_NAMES = { coolbunny: 'Lucy', rabbit: 'Bunny', dragon: 'Rex', cool: 'Sunny', cat: 'Mochi' };
   var configName = 'Lucy'; // TEACHER_NAME trong sheet Config, dùng khi không chọn nhân vật
   function store(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); return true; } catch (e) { return false; } }
   function load(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function getName(kind) { return load('name:' + kind) || DEFAULT_NAMES[kind] || configName; }
 
   // Ảnh có sẵn trong app cho một số nhân vật; ảnh người học tự chọn trên máy được ưu tiên hơn.
-  var BUILTIN_PHOTOS = { lucy: 'lucy.jpg' };
+  var BUILTIN_PHOTOS = {};
 
   function renderMascot() {
     var kind = mascotSel.value;
@@ -572,10 +672,10 @@
   try {
     var savedM = localStorage.getItem('mascot');
     // Bản cũ: thỏ mang tên Lucy. Từ khi Lucy có hình riêng, chuyển một lần sang Lucy.
-    if (!localStorage.getItem('mascotV2')) {
-      if (!savedM || savedM === 'rabbit') savedM = 'lucy';
+    if (!localStorage.getItem('mascotV3')) {
+      if (!savedM || savedM === 'rabbit' || savedM === 'lucy') savedM = 'coolbunny';
       localStorage.setItem('mascot', savedM);
-      localStorage.setItem('mascotV2', '1');
+      localStorage.setItem('mascotV3', '1');
     }
     if (savedM && mascotSel.querySelector('option[value="' + savedM + '"]')) mascotSel.value = savedM;
   } catch (e) {}
@@ -619,6 +719,7 @@
   function renderStats(st) {
     var box = $('stats');
     box.innerHTML = '';
+    $('progressSec').classList.toggle('hidden', !(st && st.sessions));
     if (!st || !st.sessions) { box.classList.add('hidden'); return; }
     [[st.streak, st.streak > 0 ? 'ngày liên tiếp' : 'ngày liên tiếp — hôm nay luyện để bắt đầu chuỗi mới'],
      [st.weekMinutes, 'phút trong 7 ngày qua'], [st.sessions, 'buổi đã học'], [st.vocab, 'từ trong sổ']].forEach(function (p) {
@@ -635,7 +736,19 @@
     return boot.modes.filter(function (m) { return m.id === id; })[0] || null;
   }
 
+  function isKids() { var m = boot && modeById(el.mode.value); return !!(m && m.kids); }
+  function applyModeUi() {
+    var k = isKids();
+    $('kidRow').classList.toggle('hidden', !k);
+    $('teachSec').classList.toggle('hidden', k);
+    $('otherSec').classList.toggle('hidden', k);
+    el.topic.placeholder = k ? 'Ví dụ: con khủng long, xe ô tô, màu hồng…' : 'Ví dụ: explaining a CTO PCI strategy, ordering food…';
+    $('hint').textContent = k ? 'Bật loa vừa đủ nghe, để điện thoại gần bé. Bé chen ngang thoải mái, giáo viên sẽ dừng lại nghe bé.' :
+      'Nên dùng tai nghe để giáo viên không nghe lại tiếng của chính mình.';
+  }
+
   function fillSubModes() {
+    applyModeUi();
     var m = modeById(el.mode.value);
     el.subMode.innerHTML = '';
     (m ? m.subs : []).forEach(function (s) { el.subMode.add(new Option(s.label, s.id)); });
@@ -743,6 +856,9 @@
       } catch (e) {}
       sel.onchange = function () { try { localStorage.setItem(key, sel.value); } catch (e) {} };
     });
+    var kidName = $('kidName');
+    try { kidName.value = localStorage.getItem('kidName') || ''; } catch (e) {}
+    kidName.onchange = function () { try { localStorage.setItem('kidName', kidName.value.trim()); } catch (e) {} };
     renderStats(b.stats);
     if (b.teacherName) configName = b.teacherName;
     renderMascot();
@@ -775,7 +891,7 @@
     $('lessonPill').textContent = m ? m.label + (s ? ' · ' + s.text : '') : 'Chọn bài học';
   }
   function openSettings() {
-    if (!boot || S) return;
+    if (!boot) return;
     $('settings').classList.remove('hidden');
     document.body.classList.add('sheet-open');
   }
@@ -785,6 +901,36 @@
     updatePill();
   }
   $('gearBtn').addEventListener('click', openSettings);
+
+  // ---- cài app
+  var installEvt = null;
+  var isStandalone = window.navigator.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  var isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (!isStandalone && isIOS) $('installBtn').classList.remove('hidden');
+  window.addEventListener('beforeinstallprompt', function (ev) {
+    ev.preventDefault();
+    installEvt = ev;
+    if (!isStandalone) $('installBtn').classList.remove('hidden');
+  });
+  window.addEventListener('appinstalled', function () { $('installBtn').classList.add('hidden'); });
+  $('installBtn').addEventListener('click', function () {
+    if (installEvt) {
+      installEvt.prompt();
+      installEvt.userChoice.then(function (c) { if (c && c.outcome === 'accepted') $('installBtn').classList.add('hidden'); });
+      installEvt = null;
+      return;
+    }
+    $('iosGuide').classList.remove('hidden');
+  });
+  $('guideClose').addEventListener('click', function () { $('iosGuide').classList.add('hidden'); });
+  $('iosGuide').addEventListener('click', function (ev) { if (ev.target === $('iosGuide')) $('iosGuide').classList.add('hidden'); });
+  $('toolsBtn').addEventListener('click', function () {
+    openSettings();
+    $('logBox').open = true;
+    el.log.scrollTop = el.log.scrollHeight;
+  });
   $('lessonPill').addEventListener('click', openSettings);
   $('setDone').addEventListener('click', closeSettings);
   $('settings').addEventListener('click', function (ev) { if (ev.target === this) closeSettings(); });
@@ -822,6 +968,30 @@
     cur.text += text;
     cur.body.textContent = cur.text;
     el.log.scrollTop = el.log.scrollHeight;
+    showCaption(cur);
+    $('logSum').textContent = 'Xem toàn bộ hội thoại (' + S.items.length + ' lượt)';
+  }
+
+  // Phụ đề dưới nhân vật: câu gần nhất của bên vừa lên tiếng.
+  function showCaption(cur) {
+    var cc = $('cc');
+    var hideAi = cur.role === 'ai' && el.log.classList.contains('hide-ai');
+    cc.className = cur.role + (hideAi ? ' blur' : '');
+    cc.innerHTML = '';
+    var tag = document.createElement('small');
+    tag.textContent = cur.role === 'user' ? 'Bạn' : teacherName;
+    var body = document.createElement('span');
+    var t = cur.text.trim();
+    body.textContent = t.length > 220 ? '…' + t.slice(-220) : t;
+    cc.appendChild(tag); cc.appendChild(body);
+  }
+  function idleCaption(text) {
+    var cc = $('cc');
+    cc.className = 'idle';
+    cc.innerHTML = '';
+    var b = document.createElement('span');
+    b.textContent = text;
+    cc.appendChild(b);
   }
 
   function closeBubbles(role) {
@@ -1040,7 +1210,8 @@
   function setMuted(m) {
     S.muted = m;
     el.muteBtn.classList.toggle('active', m);
-    el.muteBtn.textContent = m ? 'Bật micro' : 'Tắt micro';
+    el.muteBtn.textContent = m ? '🔇' : '🎙️';
+    el.muteBtn.setAttribute('aria-label', m ? 'Bật micro' : 'Tắt micro');
     if (m && S.ready && S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
     refreshStatus();
   }
@@ -1099,8 +1270,10 @@
     el.mainBtn.disabled = true;
     el.summaryCard.classList.add('hidden');
     el.log.innerHTML = '';
-    $('logCard').classList.remove('hidden');
-    $('hint').classList.add('hidden');
+    $('logSec').classList.remove('hidden');
+    $('logBox').open = false;
+    $('logSum').textContent = 'Xem toàn bộ hội thoại';
+    idleCaption('Đang kết nối…');
     closeSettings();
     setStatus('Đang kết nối…', 'warn', 'Xin quyền micro và mở phiên với giáo viên');
 
@@ -1125,7 +1298,7 @@
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
       correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
-      persona: $('personaSel').value, name: teacherName, mascot: mascotSel.value };
+      persona: $('personaSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -1138,9 +1311,12 @@
       S.wsUrl = info.wsUrl; S.setup = info.setup; S.kickoff = info.kickoff; S.modeLabel = info.modeLabel;
       S.startedAt = Date.now();
       el.setupCard.classList.add('hidden');
-      el.tools.classList.remove('hidden');
+      document.body.classList.add('in-session');
+      ['muteBtn', 'toolsBtn'].forEach(function (id) { $(id).classList.remove('ghostspace'); });
+      idleCaption(teacherName + ' sắp chào bạn…');
       $('bars').classList.remove('hidden');
       el.prepBtn.classList.toggle('hidden', req.mode !== 'ielts');
+      ['transBtn', 'hideBtn', 'reviewBtn'].forEach(function (id) { $(id).classList.toggle('hidden', !!info.kids); });
       setHideAi(req.mode === 'listening');
       el.mainBtn.disabled = false;
       el.mainBtn.classList.add('on');
@@ -1172,7 +1348,10 @@
     try { if (S.outCtx) S.outCtx.close(); } catch (e) {}
     try { if (S.wake) S.wake.release(); } catch (e) {}
     S = null;
-    el.tools.classList.add('hidden');
+    document.body.classList.remove('in-session');
+    ['muteBtn', 'toolsBtn'].forEach(function (id) { $(id).classList.add('ghostspace'); });
+    el.muteBtn.classList.remove('active'); el.muteBtn.textContent = '🎙️';
+    idleCaption('Bấm nút để bắt đầu nói chuyện');
     $('bars').classList.add('hidden');
     showLevel(0, 'listen');
     el.setupCard.classList.remove('hidden');
@@ -1213,7 +1392,7 @@
     if (res.error) add('p', res.error, 'alert');
     if (res.summary) add('p', res.summary);
     if (res.corrections && res.corrections.length) {
-      add('h2', 'Câu chưa chuẩn và cách nói tốt hơn');
+      add('h2', res.kids ? 'Từ bé nói chưa rõ, bố mẹ luyện thêm' : 'Câu chưa chuẩn và cách nói tốt hơn');
       res.corrections.forEach(function (c) {
         var d = add('div', '', 'fix');
         add('div', '✗ ' + (c.said || ''), 'said', d);
@@ -1222,7 +1401,7 @@
       });
     }
     if (res.vocabulary && res.vocabulary.length) {
-      add('h2', 'Từ và cụm từ đáng học');
+      add('h2', res.kids ? 'Từ bé đã học hôm nay' : 'Từ và cụm từ đáng học');
       res.vocabulary.forEach(function (v) {
         var d = add('div', '', 'voc');
         add('b', v.term || '', '', d);
@@ -1231,7 +1410,7 @@
       });
     }
     if (res.focus_points && res.focus_points.length) {
-      add('h2', 'Cần luyện tiếp');
+      add('h2', res.kids ? 'Gợi ý chơi cùng bé ở nhà' : 'Cần luyện tiếp');
       var ul = add('ul');
       res.focus_points.forEach(function (f) { add('li', f, '', ul); });
     }

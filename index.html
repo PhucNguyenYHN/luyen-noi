@@ -109,7 +109,60 @@
   @keyframes talkSway { 0%, 100% { transform: rotate(-1.2deg); } 33% { transform: rotate(.8deg); } 66% { transform: rotate(-.4deg); } }
   .photo-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .tip { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
-  @media (prefers-reduced-motion: reduce) { #mascot * { animation: none !important; } }
+  /* Nhân vật 3D (Fluent Emoji, MIT): nổi bồng bềnh, thỉnh thoảng nhảy; nói thì co giãn theo giọng và lắc lư;
+     nghe thì nghiêng đầu và phồng theo tiếng micro; nghĩ thì lắc qua lại và hiện ba chấm; chạm vào thì bật nảy. */
+  #mascot .m3d { position: relative; width: 100%; height: 100%; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #mascot .m3d-shadow {
+    position: absolute; left: 22%; right: 22%; bottom: 2%; height: 9%; border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .28), transparent); animation: shadow3d 6s ease-in-out infinite;
+  }
+  #mascot .m3d-bob { position: absolute; inset: 0; transform-origin: 50% 92%; animation: hop3d 6s ease-in-out infinite; }
+  #mascot .m3d-body {
+    position: absolute; inset: 4%; transform-origin: 50% 95%; transition: transform .07s linear;
+    transform: scale(calc(1 + var(--m) * .06 + var(--l) * .05), calc(1 + var(--m) * .13 + var(--l) * .05)) translateY(calc(var(--m) * -8px));
+  }
+  #mascot .m3d-body img { position: absolute; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+  #mascot .m3d-img { inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .18)); }
+  #mascot .m3d-glasses { left: 15%; top: 25.5%; width: 70%; height: 70%; transform-origin: 50% 46%; }
+  #mascot .m3d-spark { position: absolute; width: 26%; height: 26%; opacity: 0; pointer-events: none; }
+  #mascot .m3d-spark.a { right: -4%; top: 2%; } #mascot .m3d-spark.b { left: -6%; top: 30%; width: 18%; height: 18%; }
+  #mascot .m3d-dots { position: absolute; right: -8%; top: -2%; display: none; gap: 5px; padding: 7px 10px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+  #mascot .m3d-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: dot3d 1s ease-in-out infinite; }
+  #mascot .m3d-dots i:nth-child(2) { animation-delay: .15s; } #mascot .m3d-dots i:nth-child(3) { animation-delay: .3s; }
+  #mascot.idle .m3d-spark.a { animation: twinkle 5s ease-in-out infinite; }
+  #mascot.speak .m3d-bob { animation: wobble3d .9s ease-in-out infinite; }
+  #mascot.speak .m3d-spark { animation: sparkUp 1.6s ease-out infinite; } #mascot.speak .m3d-spark.b { animation-delay: .8s; }
+  #mascot.speak .m3d-glasses { animation: glassBob .45s ease-in-out infinite; }
+  #mascot.listen .m3d-bob { animation: lean3d 3.2s ease-in-out infinite; }
+  #mascot.think .m3d-bob { animation: rock3d 1.3s ease-in-out infinite; }
+  #mascot.think .m3d-dots { display: flex; }
+  #mascot .m3d.poke .m3d-bob { animation: poke3d .65s cubic-bezier(.3, 1.6, .5, 1) 1; }
+  @keyframes hop3d {
+    0%, 62%, 100% { transform: translateY(0) rotate(0); } 31% { transform: translateY(-7px) rotate(1.5deg); }
+    70% { transform: translateY(0) scale(1.08, .9); } 77% { transform: translateY(-24px) scale(.95, 1.07) rotate(-3deg); }
+    85% { transform: translateY(0) scale(1.06, .93); } 91% { transform: translateY(-5px) scale(1); }
+  }
+  @keyframes shadow3d { 0%, 62%, 100% { transform: scale(1); opacity: 1; } 31% { transform: scale(.9); } 77% { transform: scale(.65); opacity: .5; } 85% { transform: scale(1.08); } }
+  @keyframes wobble3d { 0%, 100% { transform: rotate(-4deg) translateY(0); } 25% { transform: rotate(0) translateY(-5px); } 50% { transform: rotate(4deg) translateY(0); } 75% { transform: rotate(0) translateY(-3px); } }
+  @keyframes lean3d { 0%, 100% { transform: rotate(-7deg) translateX(-3px); } 50% { transform: rotate(-3deg) translate(-1px, -4px); } }
+  @keyframes rock3d { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  @keyframes poke3d { 0% { transform: scale(1); } 25% { transform: scale(1.18, .82); } 55% { transform: translateY(-30px) scale(.92, 1.1) rotate(8deg); } 100% { transform: none; } }
+  @keyframes twinkle { 0%, 70%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 80% { opacity: 1; transform: scale(1) rotate(20deg); } 90% { opacity: 0; transform: scale(.6) rotate(40deg); } }
+  @keyframes sparkUp { 0% { opacity: 0; transform: translateY(10px) scale(.4); } 30% { opacity: 1; transform: translateY(-4px) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(.7) rotate(30deg); } }
+  @keyframes glassBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  @keyframes dot3d { 0%, 100% { transform: translateY(0); opacity: .4; } 50% { transform: translateY(-4px); opacity: 1; } }
+  /* Lưới chọn nhân vật trong Menu */
+  .mgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+  .mgrid button {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px 6px; cursor: pointer; font: inherit; font-size: 12px; color: var(--ink);
+    background: var(--bg); border: 2px solid transparent; border-radius: 14px;
+  }
+  .mgrid button img { width: 52px; height: 52px; transition: transform .2s; }
+  .mgrid button:active img { transform: scale(.9); }
+  .mgrid button.on { border-color: var(--brand); background: var(--card); }
+  .mgrid button.on img { animation: poke3d .65s cubic-bezier(.3, 1.6, .5, 1) 1; }
+  .mgrid .none-ic { width: 52px; height: 52px; display: grid; place-items: center; font-size: 22px; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { #mascot *, .mgrid * { animation: none !important; } }
 
   #mainBtn {
     width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer;
@@ -395,15 +448,9 @@
 
       <section class="setup-only">
         <h3>Nhân vật</h3>
-        <label for="mascotSel">Hình nhân vật</label>
-        <select id="mascotSel">
-          <option value="coolbunny">Thỏ đeo kính đen</option>
-          <option value="cat">Mèo đeo tai nghe</option>
-          <option value="rabbit">Thỏ</option>
-          <option value="dragon">Rồng</option>
-          <option value="cool">Mặt cười kính đen</option>
-          <option value="none">Không dùng</option>
-        </select>
+        <label>Chọn nhân vật (chạm vào nhân vật trên màn hình chính để trêu nó)</label>
+        <div id="mascotGrid" class="mgrid"></div>
+        <select id="mascotSel" class="hidden" aria-hidden="true" tabindex="-1"></select>
         <label for="nameInput">Tên nhân vật (giáo viên sẽ xưng tên này)</label>
         <input type="text" id="nameInput" maxlength="30" autocomplete="off">
         <div id="photoRow" class="photo-row">
@@ -467,107 +514,67 @@
 
   // ------------------------------------------------------------ nhân vật hoạt hình
 
-  var MASCOTS = {
-    coolbunny:
-      '<svg viewBox="0 0 200 200"><defs>' +
-      '<linearGradient id="cbLens" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2d3a52"/><stop offset="1" stop-color="#06080d"/></linearGradient>' +
-      '</defs><g class="part body">' +
-      '<g class="part ear l"><ellipse cx="72" cy="50" rx="19" ry="48" fill="#fafafc" stroke="#cfd6de" stroke-width="3" transform="rotate(-8 72 50)"/><ellipse cx="72" cy="54" rx="8" ry="32" fill="#ffb8c9" transform="rotate(-8 72 54)"/></g>' +
-      '<g class="part ear r"><ellipse cx="128" cy="50" rx="19" ry="48" fill="#fafafc" stroke="#cfd6de" stroke-width="3" transform="rotate(8 128 50)"/><ellipse cx="128" cy="54" rx="8" ry="32" fill="#ffb8c9" transform="rotate(8 128 54)"/></g>' +
-      '<ellipse cx="100" cy="132" rx="66" ry="56" fill="#fafafc" stroke="#cfd6de" stroke-width="3"/>' +
-      '<ellipse cx="100" cy="152" rx="30" ry="20" fill="#eef0f4"/>' +
-      '<ellipse cx="58" cy="150" rx="10" ry="6" fill="#ffb3c4" opacity=".6"/><ellipse cx="142" cy="150" rx="10" ry="6" fill="#ffb3c4" opacity=".6"/>' +
-      '<path d="M36 118 L50 116 M150 116 L164 118" stroke="#111" stroke-width="5" stroke-linecap="round"/>' +
-      '<path d="M94 116 Q100 111 106 116" fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>' +
-      '<path d="M50 108 H94 Q96 108 95 112 L91 128 Q89 134 82 134 H62 Q55 134 53 128 L49 112 Q48 108 50 108 Z" fill="url(#cbLens)" stroke="#111" stroke-width="4" stroke-linejoin="round"/>' +
-      '<path d="M150 108 H106 Q104 108 105 112 L109 128 Q111 134 118 134 H138 Q145 134 147 128 L151 112 Q152 108 150 108 Z" fill="url(#cbLens)" stroke="#111" stroke-width="4" stroke-linejoin="round"/>' +
-      '<g class="part glint"><path d="M58 114 L70 114" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/><path d="M114 114 L126 114" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".6"/></g>' +
-      '<path d="M94 142 Q100 149 106 142 Q100 137 94 142Z" fill="#ff8fa8"/>' +
-      '<path d="M100 148 V153 M86 156 Q94 162 100 154 Q108 163 118 152" fill="none" stroke="#6d7580" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<ellipse class="part mouth" cx="101" cy="163" rx="9" ry="8" fill="#b3384f"/>' +
-      '</g></svg>',
-    cat:
-      '<svg viewBox="0 0 200 200"><g class="part body">' +
-      '<g class="part ear l"><path d="M44 84 L54 22 L94 56 Z" fill="#1f1f24"/><path d="M54 74 L59 38 L82 58 Z" fill="#f6b8c6"/></g>' +
-      '<g class="part ear r"><path d="M156 84 L146 22 L106 56 Z" fill="#1f1f24"/><path d="M146 74 L141 38 L118 58 Z" fill="#f6b8c6"/></g>' +
-      '<ellipse cx="100" cy="118" rx="68" ry="60" fill="#fff" stroke="#e3e6ea" stroke-width="2"/>' +
-      '<path d="M36 118 Q34 66 94 58 Q86 84 82 112 Q60 122 36 118 Z" fill="#1f1f24"/>' +
-      '<path d="M164 118 Q166 66 106 58 Q114 84 118 112 Q140 122 164 118 Z" fill="#1f1f24"/>' +
-      '<path d="M40 96 Q100 6 160 96" fill="none" stroke="#e5484d" stroke-width="10" stroke-linecap="round"/>' +
-      '<path d="M48 90 Q100 18 152 90" fill="none" stroke="#ffd0d2" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<g class="part eye"><ellipse cx="76" cy="120" rx="15" ry="17" fill="#3c8f88"/><ellipse cx="76" cy="122" rx="8" ry="11" fill="#14302e"/>' +
-      '<circle cx="81" cy="113" r="5" fill="#fff"/><circle cx="71" cy="128" r="2" fill="#fff" opacity=".8"/></g>' +
-      '<g class="part eye"><ellipse cx="124" cy="120" rx="15" ry="17" fill="#3c8f88"/><ellipse cx="124" cy="122" rx="8" ry="11" fill="#14302e"/>' +
-      '<circle cx="129" cy="113" r="5" fill="#fff"/><circle cx="119" cy="128" r="2" fill="#fff" opacity=".8"/></g>' +
-      '<ellipse cx="62" cy="144" rx="9" ry="5" fill="#ffb3c4" opacity=".6"/><ellipse cx="138" cy="144" rx="9" ry="5" fill="#ffb3c4" opacity=".6"/>' +
-      '<path d="M95 138 L105 138 L100 144 Z" fill="#f08aa0"/>' +
-      '<path d="M90 148 Q95 153 100 147 Q105 153 110 148" fill="none" stroke="#7a828c" stroke-width="2" stroke-linecap="round"/>' +
-      '<ellipse class="part mouth" cx="100" cy="155" rx="5" ry="5" fill="#b3384f"/>' +
-      '<path d="M58 140 L28 134 M58 147 L28 150 M142 140 L172 134 M142 147 L172 150" stroke="#c9ced6" stroke-width="1.8" stroke-linecap="round"/>' +
-      '<g class="part cup"><circle cx="38" cy="122" r="21" fill="#e5484d" stroke="#b92f35" stroke-width="3"/><circle cx="38" cy="122" r="9" fill="#fff"/></g>' +
-      '<g class="part cup"><circle cx="162" cy="122" r="21" fill="#e5484d" stroke="#b92f35" stroke-width="3"/><circle cx="162" cy="122" r="9" fill="#fff"/></g>' +
-      '</g></svg>',
-    rabbit:
-      '<svg viewBox="0 0 200 200"><g class="part body">' +
-      '<g class="part ear l"><ellipse cx="74" cy="52" rx="17" ry="46" fill="#fff" stroke="#cfd6de" stroke-width="3"/><ellipse cx="74" cy="56" rx="7.5" ry="31" fill="#ffc4d2"/></g>' +
-      '<g class="part ear r"><ellipse cx="126" cy="52" rx="17" ry="46" fill="#fff" stroke="#cfd6de" stroke-width="3"/><ellipse cx="126" cy="56" rx="7.5" ry="31" fill="#ffc4d2"/></g>' +
-      '<ellipse cx="100" cy="130" rx="64" ry="56" fill="#fff" stroke="#cfd6de" stroke-width="3"/>' +
-      '<circle cx="60" cy="146" r="10" fill="#ffb3c4" opacity=".65"/><circle cx="140" cy="146" r="10" fill="#ffb3c4" opacity=".65"/>' +
-      '<g class="part eye"><ellipse cx="77" cy="120" rx="8" ry="10" fill="#2a2f37"/><circle cx="80" cy="116" r="3" fill="#fff"/></g>' +
-      '<g class="part eye"><ellipse cx="123" cy="120" rx="8" ry="10" fill="#2a2f37"/><circle cx="126" cy="116" r="3" fill="#fff"/></g>' +
-      '<path d="M93 136 Q100 144 107 136 Q100 131 93 136Z" fill="#ff8fa8"/>' +
-      '<path d="M100 142 V148 M88 150 Q94 155 100 148 Q106 155 112 150" fill="none" stroke="#7a828c" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<ellipse class="part mouth" cx="100" cy="160" rx="9" ry="9" fill="#b3384f"/>' +
-      '</g></svg>',
-    dragon:
-      '<svg viewBox="0 0 200 200"><g class="part body">' +
-      '<path class="part wing l" d="M48 120 Q8 96 14 58 Q30 78 40 70 Q42 92 58 96Z" fill="#8fd6e8" stroke="#3f9bb3" stroke-width="3" stroke-linejoin="round"/>' +
-      '<path class="part wing r" d="M152 120 Q192 96 186 58 Q170 78 160 70 Q158 92 142 96Z" fill="#8fd6e8" stroke="#3f9bb3" stroke-width="3" stroke-linejoin="round"/>' +
-      '<path d="M70 66 L62 34 L86 58Z M130 66 L138 34 L114 58Z" fill="#ffd166" stroke="#d9a520" stroke-width="3" stroke-linejoin="round"/>' +
-      '<path d="M92 54 L100 38 L108 54Z" fill="#ff9f6b"/>' +
-      '<ellipse cx="100" cy="118" rx="62" ry="60" fill="#63cf8f" stroke="#2f9a5e" stroke-width="3"/>' +
-      '<ellipse cx="100" cy="146" rx="44" ry="30" fill="#c6f3d3"/>' +
-      '<circle cx="58" cy="134" r="9" fill="#ff9fb3" opacity=".6"/><circle cx="142" cy="134" r="9" fill="#ff9fb3" opacity=".6"/>' +
-      '<circle cx="76" cy="102" r="15" fill="#fff" stroke="#2f9a5e" stroke-width="2.5"/><circle cx="124" cy="102" r="15" fill="#fff" stroke="#2f9a5e" stroke-width="2.5"/>' +
-      '<g class="part eye"><ellipse cx="78" cy="104" rx="7" ry="9" fill="#2a2f37"/><circle cx="81" cy="100" r="2.8" fill="#fff"/></g>' +
-      '<g class="part eye"><ellipse cx="122" cy="104" rx="7" ry="9" fill="#2a2f37"/><circle cx="125" cy="100" r="2.8" fill="#fff"/></g>' +
-      '<ellipse cx="90" cy="134" rx="3" ry="4" fill="#2f9a5e"/><ellipse cx="110" cy="134" rx="3" ry="4" fill="#2f9a5e"/>' +
-      '<ellipse class="part mouth" cx="100" cy="148" rx="13" ry="11" fill="#b3384f"/>' +
-      '<path class="part flame" d="M100 176 Q88 190 100 204 Q112 190 100 176Z" fill="#ff9f43"/>' +
-      '</g></svg>',
-    cool:
-      '<svg viewBox="0 0 200 200"><defs>' +
-      '<radialGradient id="cfFace" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff7a8"/><stop offset=".45" stop-color="#ffd84a"/><stop offset="1" stop-color="#f0a500"/></radialGradient>' +
-      '<radialGradient id="cfLens" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#3a4d6e"/><stop offset=".6" stop-color="#16213a"/><stop offset="1" stop-color="#070b14"/></radialGradient>' +
-      '<linearGradient id="cfBrow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8640f"/><stop offset="1" stop-color="#7a3a05"/></linearGradient>' +
-      '</defs><g class="part body">' +
-      '<circle cx="100" cy="106" r="80" fill="url(#cfFace)"/>' +
-      '<ellipse cx="78" cy="56" rx="26" ry="12" fill="#fff" opacity=".28"/>' +
-      '<rect class="part brow l" x="54" y="38" width="36" height="13" rx="6" fill="url(#cfBrow)"/>' +
-      '<rect class="part brow r" x="110" y="38" width="36" height="13" rx="6" fill="url(#cfBrow)"/>' +
-      '<path d="M22 80 L48 78 M152 78 L178 80" stroke="#0f1a2b" stroke-width="6" stroke-linecap="round"/>' +
-      '<path d="M94 78 Q100 72 106 78" fill="none" stroke="#0f1a2b" stroke-width="6" stroke-linecap="round"/>' +
-      '<ellipse cx="72" cy="84" rx="26" ry="22" fill="url(#cfLens)" stroke="#0f1a2b" stroke-width="6"/>' +
-      '<ellipse cx="128" cy="84" rx="26" ry="22" fill="url(#cfLens)" stroke="#0f1a2b" stroke-width="6"/>' +
-      '<g class="part glint"><path d="M58 76 Q64 68 74 68" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/>' +
-      '<path d="M114 76 Q120 68 130 68" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/></g>' +
-      '<g class="part mouth">' +
-      '<path d="M48 122 Q100 136 152 122 Q146 176 100 178 Q54 176 48 122 Z" fill="#5b1616"/>' +
-      '<path d="M52 124 Q100 137 148 124 L145 142 Q100 153 55 142 Z" fill="#fff"/>' +
-      '<path d="M66 162 Q100 172 134 162 L129 170 Q100 179 71 170 Z" fill="#fff"/>' +
-      '<path d="M66 128 V145 M78 131 V148 M90 133 V150 M100 133 V151 M110 133 V150 M122 131 V148 M134 128 V145" stroke="#ddd" stroke-width="1.5"/>' +
-      '<path d="M48 122 Q100 136 152 122" fill="none" stroke="#c98a00" stroke-width="3" stroke-linecap="round"/>' +
-      '</g>' +
-      '<g class="part hand"><ellipse cx="30" cy="74" rx="17" ry="15" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/>' +
-      '<rect x="36" y="64" width="20" height="9" rx="4.5" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/>' +
-      '<rect x="36" y="76" width="18" height="9" rx="4.5" fill="#fff" stroke="#d5d9df" stroke-width="2.5"/></g>' +
-      '</g></svg>'
-  };
+  // Nhân vật 3D: ảnh Fluent Emoji (Microsoft, giấy phép MIT, xem m3d/LICENSE-fluentui-emoji.txt).
+  var M3D = [
+    ['coolbunny', 'Thỏ kính râm', 'rabbit', 'Lucy', true],
+    ['cat', 'Mèo', 'cat', 'Mochi'],
+    ['panda', 'Gấu trúc', 'panda', 'Bao'],
+    ['fox', 'Cáo', 'fox', 'Foxy'],
+    ['rabbit', 'Thỏ', 'rabbit', 'Bunny'],
+    ['dragon', 'Rồng', 'dragon', 'Rex'],
+    ['cool', 'Kính đen', 'cool', 'Sunny'],
+    ['robot', 'Rô-bốt', 'robot', 'Robo'],
+    ['owl', 'Cú', 'owl', 'Hoot'],
+    ['koala', 'Koala', 'koala', 'Kiki'],
+    ['bear', 'Gấu', 'bear', 'Teddy'],
+    ['tiger', 'Hổ', 'tiger', 'Leo']
+  ];
+  var MASCOTS = {}, DEFAULT_NAMES = {};
+  M3D.forEach(function (m) {
+    DEFAULT_NAMES[m[0]] = m[3];
+    MASCOTS[m[0]] = '<div class="m3d"><i class="m3d-shadow"></i><div class="m3d-bob"><div class="m3d-body">' +
+      '<img class="m3d-img" src="m3d/' + m[2] + '.png" alt="">' +
+      (m[4] ? '<img class="m3d-glasses" src="m3d/glasses.png" alt="">' : '') +
+      '</div></div><img class="m3d-spark a" src="m3d/sparkles.png" alt=""><img class="m3d-spark b" src="m3d/sparkles.png" alt="">' +
+      '<span class="m3d-dots"><i></i><i></i><i></i></span></div>';
+  });
   var mascot = $('mascot');
   var mascotSel = $('mascotSel');
+  (function buildMascotPicker() {
+    var grid = $('mascotGrid');
+    M3D.concat([['none', 'Không dùng']]).forEach(function (m) {
+      mascotSel.add(new Option(m[1], m[0]));
+      var b = document.createElement('button');
+      b.type = 'button'; b.dataset.kind = m[0];
+      if (m[0] === 'none') { var n = document.createElement('span'); n.className = 'none-ic'; n.textContent = '∅'; b.appendChild(n); }
+      else {
+        var w = document.createElement('span'); w.style.position = 'relative';
+        var im = document.createElement('img'); im.src = 'm3d/' + m[2] + '.png'; im.alt = ''; w.appendChild(im);
+        if (m[4]) { var gl = document.createElement('img'); gl.src = 'm3d/glasses.png'; gl.alt = '';
+          gl.style.cssText = 'position:absolute;left:15%;top:25.5%;width:70%;height:70%'; w.appendChild(gl); }
+        b.appendChild(w);
+      }
+      var t = document.createElement('span'); t.textContent = m[1]; b.appendChild(t);
+      b.addEventListener('click', function () {
+        if (mascotSel.value === m[0]) return;
+        mascotSel.value = m[0];
+        mascotSel.dispatchEvent(new Event('change'));
+      });
+      grid.appendChild(b);
+    });
+  })();
+  function markPicker() {
+    Array.prototype.forEach.call($('mascotGrid').children, function (b) { b.classList.toggle('on', b.dataset.kind === mascotSel.value); });
+  }
+  // Chạm vào nhân vật: nhảy nảy lên một cái.
+  mascot.addEventListener('click', function () {
+    var m = mascot.querySelector('.m3d');
+    if (!m) return;
+    m.classList.remove('poke'); void m.offsetWidth; m.classList.add('poke');
+    setTimeout(function () { m.classList.remove('poke'); }, 700);
+  });
 
   // Mỗi nhân vật có tên riêng (sửa được) và có thể thay bằng ảnh riêng; cả hai lưu trên thiết bị này.
-  var DEFAULT_NAMES = { coolbunny: 'Lucy', rabbit: 'Bunny', dragon: 'Rex', cool: 'Sunny', cat: 'Mochi' };
   var configName = 'Lucy'; // TEACHER_NAME trong sheet Config, dùng khi không chọn nhân vật
   function store(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); return true; } catch (e) { return false; } }
   function load(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -605,6 +612,7 @@
     $('photoClear').classList.toggle('hidden', !own);
     $('nameInput').value = getName(kind);
     $('nameInput').placeholder = DEFAULT_NAMES[kind] || configName;
+    markPicker();
     applyName();
   }
   function applyName() {

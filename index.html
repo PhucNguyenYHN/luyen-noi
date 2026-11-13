@@ -381,7 +381,7 @@
           <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
           <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
         </div>
-        <div class="tip">Muốn đổi bài học, giọng hay nhân vật thì kết thúc buổi này trước.</div>
+        <div class="tip">Đang trong buổi học nên phần cài đặt (bài học, giọng, nhân vật…) tạm ẩn. Bấm <b>Kết thúc</b> ở màn hình chính là các lựa chọn hiện lại.</div>
       </section>
 
       <section id="logSec" class="hidden">
@@ -410,6 +410,11 @@
           <input type="text" id="kidName" maxlength="30" autocomplete="off" placeholder="Ví dụ: Bin, Na, Su…">
           <div class="tip">Chế độ cho bé tự dùng lời dạy riêng: nói chậm, xen tiếng Việt và tiếng Anh, không chê bé nói sai, chờ bé nói lâu hơn và chiều theo khi bé chen ngang. Bố mẹ nên ngồi cạnh bé.</div>
         </div>
+      </section>
+
+      <section id="kidTeachSec" class="setup-only hidden">
+        <h3>Cách giáo viên dạy</h3>
+        <div class="tip">Chế độ Bé học nói dùng cách dạy riêng cho trẻ 3 tuổi, nên tính cách, mức sửa lỗi và ngôn ngữ giảng được ẩn. Chọn chế độ khác ở mục Bài học để chỉnh lại các mục này.</div>
       </section>
 
       <section id="teachSec" class="setup-only">
@@ -749,6 +754,7 @@
     var k = isKids();
     $('kidRow').classList.toggle('hidden', !k);
     $('teachSec').classList.toggle('hidden', k);
+    $('kidTeachSec').classList.toggle('hidden', !k);
     $('otherSec').classList.toggle('hidden', k);
     el.topic.placeholder = k ? 'Ví dụ: con khủng long, xe ô tô, màu hồng…' : 'Ví dụ: explaining a CTO PCI strategy, ordering food…';
     $('hint').textContent = k ? 'Bật loa vừa đủ nghe, để điện thoại gần bé. Bé chen ngang thoải mái, giáo viên sẽ dừng lại nghe bé.' :
@@ -830,8 +836,12 @@
   $('pwBtn').addEventListener('click', submitPassword);
   $('pw').addEventListener('keydown', function (ev) { if (ev.key === 'Enter') submitPassword(); });
 
+  var booting = false;
   function loadBoot() {
+  booting = true;
   server('getBootstrap', auth).then(function (b) {
+    booting = false;
+    el.bootMsg.textContent = '';
     if (b.locked) { forgetAuth(); showLock(''); return; }
     hideLock();
     boot = b;
@@ -877,8 +887,10 @@
     if (!b.hasKey) el.bootMsg.textContent = 'Máy chủ chưa có GEMINI_API_KEY trong Script Properties.';
     setIdleButton();
   }).catch(function (e) {
-    el.mainBtn.textContent = 'Lỗi';
-    el.bootMsg.textContent = 'Không tải được ứng dụng: ' + (e && e.message || e);
+    booting = false;
+    el.mainBtn.disabled = false;
+    el.mainBtn.textContent = 'Thử lại';
+    el.bootMsg.textContent = 'Không tải được cài đặt: ' + (e && e.message || e) + '. Bấm "Thử lại" hoặc ☰ Menu.';
   });
   }
   loadBoot();
@@ -899,7 +911,11 @@
     $('lessonPill').textContent = m ? m.label + (s ? ' · ' + s.text : '') : 'Chọn bài học';
   }
   function openSettings() {
-    if (!boot) return;
+    if (!boot) {
+      el.bootMsg.textContent = 'Đang tải cài đặt từ máy chủ (lần đầu trong ngày có thể mất 5–10 giây)…';
+      if (!booting) loadBoot();
+      return;
+    }
     $('settings').classList.remove('hidden');
     document.body.classList.add('sheet-open');
   }
@@ -1181,7 +1197,15 @@
       delete S.setup.setup.tools;
       S.searchDropped = true;
     }
-    if (!dropSearch && (S.retries > 4 || !S.started)) {
+    if (!dropSearch && !S.started) {
+      var why = 'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') +
+        '. Thường do hết hạn mức miễn phí trong ngày hoặc mạng chập chờn; thử lại sau ít phút.';
+      cleanup();
+      setStatus('Không kết nối được', 'bad', why);
+      setIdleButton();
+      return;
+    }
+    if (!dropSearch && S.retries > 4) {
       stopPlayback();
       setStatus('Mất kết nối', 'bad', (S.started ? 'Bấm "Kết thúc" để lưu và xem tổng kết phần đã học.' :
         'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') + '. Kiểm tra LIVE_MODEL trong sheet Config và hạn mức gói miễn phí.'));
@@ -1426,7 +1450,11 @@
     el.summaryCard.scrollIntoView({ behavior: 'smooth' });
   }
 
-  el.mainBtn.addEventListener('click', function () { if (S) end(); else start(); });
+  el.mainBtn.addEventListener('click', function () {
+    if (S) { end(); return; }
+    if (!boot) { el.mainBtn.disabled = true; el.mainBtn.textContent = 'Đang tải…'; loadBoot(); return; }
+    start();
+  });
   window.addEventListener('beforeunload', function (ev) { if (S) { ev.preventDefault(); ev.returnValue = ''; } });
 })();
 </script>

@@ -7,11 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Luyện nói">
-<meta name="theme-color" content="#0f6e6e">
+<meta name="theme-color" content="#6d4aff">
 <meta name="robots" content="noindex">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180-aipro.png">
 <link rel="icon" type="image/png" href="icon-192-aipro.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('theme') || 'auto'; } catch (e) { document.documentElement.dataset.theme = 'auto'; }</script>
 <style>
   :root {
     --bg: #f4f6f8; --card: #ffffff; --ink: #1c2530; --muted: #66727f; --line: #dde3ea;
@@ -320,16 +324,146 @@
   .guide-card .k { display: inline-block; padding: 1px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-weight: 600; }
   .guide-arrow { position: absolute; bottom: -54px; right: 34px; font-size: 40px; color: #fff; animation: nudge 1s ease-in-out infinite; }
   @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+
+  /* ===== Giao diện kiểu app ôn IELTS: màu tím + xanh ngọc, phông Be Vietnam Pro, tab nổi dưới ===== */
+  :root {
+    --bg: #f4f2fb; --card: #ffffff; --card-2: #f8f7fd; --ink: #1d1b2f; --ink-2: #3d3a57; --muted: #6b6889; --line: #e7e4f3;
+    --brand: #6d4aff; --brand-ink: #ffffff; --brand-soft: #efeaff; --user: #efeaff; --ai: #ffffff; --cta: #ea580c;
+    --ok: #15994a; --ok-soft: #e3f7ea; --warn: #b26a00; --bad: #d92d4a;
+    --shadow: 0 1px 2px rgb(40 30 90 / 0.05), 0 6px 18px rgb(40 30 90 / 0.06);
+    --bg-grad: radial-gradient(1200px 500px at 100% -10%, #e9e3ff 0%, transparent 60%), radial-gradient(900px 400px at -10% 0%, #dff5f0 0%, transparent 55%);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+      --bg: #12111c; --card: #1c1a2b; --card-2: #232136; --ink: #eeecf8; --ink-2: #cfcce6; --muted: #a19dc0; --line: #2e2b45;
+      --brand: #9b83ff; --brand-ink: #120d2b; --brand-soft: #2a2450; --user: #2a2450; --ai: #1c1a2b; --cta: #fb923c;
+      --ok: #4ade80; --ok-soft: #143223; --warn: #fbbf24; --bad: #fb7185;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 20px rgb(0 0 0 / 0.25);
+      --bg-grad: radial-gradient(1000px 500px at 100% -10%, #2a2058 0%, transparent 60%), radial-gradient(800px 400px at -10% 0%, #0f3a37 0%, transparent 55%);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12111c; --card: #1c1a2b; --card-2: #232136; --ink: #eeecf8; --ink-2: #cfcce6; --muted: #a19dc0; --line: #2e2b45;
+    --brand: #9b83ff; --brand-ink: #120d2b; --brand-soft: #2a2450; --user: #2a2450; --ai: #1c1a2b; --cta: #fb923c;
+    --ok: #4ade80; --ok-soft: #143223; --warn: #fbbf24; --bad: #fb7185;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 20px rgb(0 0 0 / 0.25);
+    --bg-grad: radial-gradient(1000px 500px at 100% -10%, #2a2058 0%, transparent 60%), radial-gradient(800px 400px at -10% 0%, #0f3a37 0%, transparent 55%);
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg-grad), var(--bg); background-attachment: fixed;
+    font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+  body.in-session { padding-bottom: 16px; }
+  .card { border-radius: 18px; box-shadow: var(--shadow); padding: 16px; }
+  .topbar { position: sticky; top: 0; z-index: 6; margin: -16px -16px 12px; padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    background: color-mix(in srgb, var(--card) 86%, transparent); backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+    border-bottom: 1px solid var(--line); }
+  .topbar .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .topbar .brand img { width: 30px; height: 30px; border-radius: 9px; flex: none; }
+  .topbar h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; }
+  #gearBtn { display: none; }
+  .iconbtn { border-radius: 12px; }
+  .eyebrow { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand); margin: 0 0 2px; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-weight: 700; }
+  /* Tab nổi dưới */
+  .bnav { position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 15; max-width: 560px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border: 1px solid var(--line); border-radius: 20px;
+    background: color-mix(in srgb, var(--card) 94%, transparent); backdrop-filter: saturate(1.4) blur(16px); -webkit-backdrop-filter: saturate(1.4) blur(16px);
+    box-shadow: 0 6px 24px rgb(16 24 40 / 0.12); }
+  .bnav button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 2px 6px; border: 0; background: transparent;
+    color: var(--muted); font: 600 11.5px/1.2 inherit; border-radius: 16px; cursor: pointer; }
+  .bnav button svg { width: 22px; height: 22px; transition: transform .2s; }
+  .bnav button.on { color: var(--brand); background: var(--brand-soft); }
+  .bnav button.on svg { transform: translateY(-1px) scale(1.08); }
+  .wrap.locked ~ .bnav, body.in-session .bnav, body.sheet-open .bnav { display: none; }
+  /* Màn đang xem */
+  #homeView, #vocabView { display: none; }
+  body.view-home #homeView, body.view-vocab #vocabView { display: block; animation: rise .28s ease-out; }
+  body.view-home .stage, body.view-home #summaryCard, body.view-vocab .stage, body.view-vocab #summaryCard { display: none !important; }
+  .wrap.locked #homeView, .wrap.locked #vocabView { display: none !important; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  /* Màn Hôm nay */
+  .greet { display: flex; align-items: center; gap: 12px; margin: 2px 0 14px; }
+  .greet .gm { width: 58px; height: 58px; flex: none; }
+  .greet .gm img { width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgba(0,0,0,.15)); }
+  .greet h2 { margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; }
+  .greet .meta { color: var(--muted); font-size: 0.85rem; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 10px 12px; text-align: center; box-shadow: var(--shadow); }
+  .kpi b { display: block; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); }
+  .kpi b.hot { color: var(--cta); }
+  .kpi span { display: block; margin-top: 3px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .hsec { background: color-mix(in srgb, var(--brand) 6%, var(--card)); border: 1px solid color-mix(in srgb, var(--brand) 16%, var(--line)); border-radius: 20px; padding: 16px; margin: 0 0 14px; }
+  .plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .plan-head h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 10px; }
+  .week .d { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+  .week .d i { display: grid; place-items: center; margin: 4px auto 0; width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed var(--line); font-style: normal; font-size: 0.85rem; color: var(--muted); background: var(--card); }
+  .week .d.on i { border: 0; background: var(--brand); color: var(--brand-ink); }
+  .week .d.now i { border: 2px solid var(--brand); color: var(--brand); }
+  .week .d.now.on i { color: var(--brand-ink); }
+  .quote { font-size: 0.86rem; color: var(--ink-2); border-left: 3px solid var(--brand); padding: 2px 0 2px 10px; margin: 10px 0 0; }
+  .task { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; padding: 12px; margin: 0 0 8px; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
+  .task:last-child { margin-bottom: 0; }
+  .task:active { transform: scale(.99); }
+  .task .chip { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 0.95rem;
+    color: var(--c, var(--brand)); background: color-mix(in srgb, var(--c, var(--brand)) 14%, var(--card)); }
+  .task .body { flex: 1; min-width: 0; }
+  .task h4 { margin: 0; font-size: 0.98rem; font-weight: 700; }
+  .task .meta { color: var(--muted); font-size: 0.84rem; }
+  .task .go { color: var(--muted); opacity: .6; flex: none; }
+  .task.done { opacity: .62; }
+  .task.done .chip { background: var(--ok-soft); color: var(--ok); }
+  .task.focus { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); background: color-mix(in srgb, var(--brand) 4%, var(--card)); }
+  .task[data-k="cardio"] { --c: #2563eb; } .task[data-k="listening"] { --c: #ea580c; } .task[data-k="vocab"] { --c: #7c3aed; }
+  .task[data-k="friend"] { --c: #0d9488; } .task[data-k="kids"] { --c: #db2777; } .task[data-k="ielts"] { --c: #ca8a04; } .task[data-k="general"] { --c: #16a34a; }
+  .ring-bg { stroke: color-mix(in srgb, var(--brand) 15%, transparent); }
+  .ring-fg { stroke: var(--brand); transition: stroke-dashoffset .6s ease; }
+  .ring-t { font-size: 13px; font-weight: 800; fill: var(--ink); }
+  .hfoot { text-align: center; color: var(--muted); font-size: 0.82rem; margin: 14px 0 4px; }
+  /* Sổ từ */
+  .vhead { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin: 2px 0 10px; }
+  .vhead h2 { margin: 0; font-size: 1.3rem; font-weight: 800; }
+  #vocabQ { margin-bottom: 12px; }
+  .vitem { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
+  .vitem .vt { display: flex; align-items: center; gap: 8px; }
+  .vitem b { font-size: 1.05rem; color: var(--brand); }
+  .vitem .say { margin-left: auto; flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--card-2); cursor: pointer; font-size: 16px; }
+  .vitem .vm { margin-top: 2px; }
+  .vitem .vx { font-size: 0.9rem; color: var(--muted); font-style: italic; margin-top: 4px; cursor: pointer; }
+  .vitem .vd { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+  /* Chọn Sáng / Tối / Theo máy */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card-2); margin-top: 6px; }
+  .seg button { border: 0; background: transparent; padding: 8px 14px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .seg button.on { background: var(--brand); color: var(--brand-ink); }
+  /* Nút, ô nhập, phụ đề theo phong cách mới */
+  #mainBtn { box-shadow: 0 10px 24px -6px color-mix(in srgb, var(--brand) 60%, transparent); }
+  #cc { border-radius: 18px; box-shadow: var(--shadow); }
+  select, input[type=text], input[type=password] { border-radius: 12px; background: var(--card); }
+  .ghost, .pill { border-radius: 12px; font-weight: 600; }
+  .sheet-body { border-radius: 22px 22px 0 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="topbar">
-    <h1>Luyện nói tiếng Anh</h1>
+    <div class="brand"><img src="icon-180-aipro.png" alt=""><h1>Luyện nói tiếng Anh</h1></div>
     <div class="right">
-      <button id="installBtn" class="iconbtn hidden" aria-label="Cài app lên màn hình chính">📲 Cài app</button>
+      <button id="installBtn" class="iconbtn hidden" aria-label="Cài app lên màn hình chính">📲 Cài</button>
       <button id="gearBtn" class="iconbtn" aria-label="Mở menu">☰ Menu</button>
     </div>
+  </div>
+
+  <div id="homeView"></div>
+  <div id="vocabView">
+    <div class="vhead"><div><p class="eyebrow">Từ đã học qua các buổi</p><h2>Sổ từ</h2></div><span class="badge" id="vocabCount">0 từ</span></div>
+    <input type="text" id="vocabQ" placeholder="Tìm từ tiếng Anh hoặc nghĩa tiếng Việt…" autocomplete="off">
+    <div id="vocabList"></div>
   </div>
 
   <div class="card hidden" id="lockCard">
@@ -471,6 +605,15 @@
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
       </section>
 
+      <section>
+        <h3>Giao diện</h3>
+        <div class="seg" id="themeSeg" role="group" aria-label="Chủ đề màu">
+          <button type="button" data-th="light">☀️ Sáng</button>
+          <button type="button" data-th="dark">🌙 Tối</button>
+          <button type="button" data-th="auto">Theo máy</button>
+        </div>
+      </section>
+
       <section id="recentCard" class="hidden">
         <h3>Các buổi gần đây</h3>
         <div class="recent" id="recent"></div>
@@ -483,6 +626,13 @@
     </div>
   </div>
 </div>
+
+<nav class="bnav" id="bnav" aria-label="Chuyển màn">
+  <button type="button" data-v="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h5v-6h4v6h5V9.5"/></svg><span>Hôm nay</span></button>
+  <button type="button" data-v="speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Luyện nói</span></button>
+  <button type="button" data-v="vocab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6"/></svg><span>Sổ từ</span></button>
+  <button type="button" data-v="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></button>
+</nav>
 
 <div id="iosGuide" class="guide hidden" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
   <div class="guide-card">
@@ -887,6 +1037,7 @@
     renderRecent(b.recent);
     if (!b.hasKey) el.bootMsg.textContent = 'Máy chủ chưa có GEMINI_API_KEY trong Script Properties.';
     setIdleButton();
+    setView(VIEW);
   }).catch(function (e) {
     booting = false;
     el.mainBtn.disabled = false;
@@ -926,6 +1077,167 @@
     updatePill();
   }
   $('gearBtn').addEventListener('click', openSettings);
+
+  // ---- màn đang xem: Hôm nay · Luyện nói · Sổ từ · Menu (tab nổi dưới, học từ app ôn IELTS)
+  var VIEW = 'home';
+  try { VIEW = localStorage.getItem('view') || 'home'; } catch (e) {}
+  if (['home', 'speak', 'vocab'].indexOf(VIEW) < 0) VIEW = 'home';
+  function setView(v) {
+    if (v === 'menu') { openSettings(); return; }
+    if (S) v = 'speak';
+    VIEW = v;
+    document.body.classList.toggle('view-home', v === 'home');
+    document.body.classList.toggle('view-vocab', v === 'vocab');
+    Array.prototype.forEach.call(document.querySelectorAll('#bnav button'), function (b) { b.classList.toggle('on', b.dataset.v === v); });
+    try { localStorage.setItem('view', v); } catch (e) {}
+    if (v === 'home') renderHome();
+    if (v === 'vocab') { renderVocab(); try { localStorage.setItem('vocabSeen', localDay(new Date())); } catch (e) {} }
+    window.scrollTo(0, 0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#bnav button'), function (b) {
+    b.addEventListener('click', function () { setView(b.dataset.v); });
+  });
+  document.body.classList.toggle('view-home', VIEW === 'home');
+  document.body.classList.toggle('view-vocab', VIEW === 'vocab');
+
+  // Chủ đề Sáng / Tối / Theo máy
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem('theme', t); } catch (e) {}
+    Array.prototype.forEach.call(document.querySelectorAll('#themeSeg button'), function (b) { b.classList.toggle('on', b.dataset.th === t); });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#themeSeg button'), function (b) {
+    b.addEventListener('click', function () { setTheme(b.dataset.th); });
+  });
+  setTheme(document.documentElement.dataset.theme || 'auto');
+
+  var QUOTES = ['Không cần hoàn hảo, chỉ cần đều đặn.', 'Nói sai mà người ta hiểu vẫn hơn im lặng.', 'Hôm nay 15 phút còn hơn mai 2 tiếng.',
+    'Nghe được một câu hôm nay là nghe được câu đó ở hội nghị.', 'Chuyên môn đã có, tiếng Anh chỉ là cây cầu.',
+    'Đừng nuốt âm cuối, người nghe sẽ hiểu bạn hơn.', 'Chậm mà chắc, chuỗi ngày học là vũ khí mạnh nhất.'];
+  var DAILY_GOAL = 20; // phút mỗi ngày
+  function greetText() {
+    var h = new Date().getHours();
+    return h < 11 ? ['Chào buổi sáng', '☀️'] : h < 14 ? ['Chào buổi trưa', '🌤️'] : h < 18 ? ['Chào buổi chiều', '🌇'] : ['Chào buổi tối', '🌙'];
+  }
+  function ringSvg(v, label) {
+    var size = 58, sw = 6, r = (size - sw) / 2, len = 2 * Math.PI * r; v = Math.max(0, Math.min(1, v));
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" aria-hidden="true">' +
+      '<circle cx="29" cy="29" r="' + r + '" fill="none" stroke-width="' + sw + '" class="ring-bg"/>' +
+      '<circle cx="29" cy="29" r="' + r + '" fill="none" stroke-width="' + sw + '" class="ring-fg" stroke-dasharray="' + len + '" stroke-dashoffset="' +
+      (len * (1 - v)) + '" stroke-linecap="round" transform="rotate(-90 29 29)"/>' +
+      '<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" class="ring-t">' + label + '</text></svg>';
+  }
+  function hEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function localDay(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  // Chọn sẵn chế độ rồi chuyển sang màn Luyện nói.
+  function goSpeak(mode, sub) {
+    if (!boot || !modeById(mode)) { setView('speak'); return; }
+    el.mode.value = mode;
+    try { localStorage.setItem('mode', mode); } catch (e) {}
+    fillSubModes();
+    if (sub && el.subMode.querySelector('option[value="' + sub + '"]')) { el.subMode.value = sub; updatePill(); }
+    setView('speak');
+  }
+  function taskBtn(x, focus) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'task' + (x.done ? ' done' : '') + (focus ? ' focus' : ''); b.dataset.k = x.k;
+    b.innerHTML = '<span class="chip">' + (x.done ? '✓' : x.c) + '</span><span class="body"><h4>' + x.title + '</h4><div class="meta">' + x.meta + '</div></span>' +
+      '<span class="go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>';
+    b.addEventListener('click', x.go);
+    return b;
+  }
+  function renderHome() {
+    var box = $('homeView');
+    if (!boot) { box.innerHTML = '<p class="empty">Đang tải…</p>'; return; }
+    var st = boot.stats || {}, g = greetText();
+    var dateStr = new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' });
+    var quote = QUOTES[Math.floor(Date.now() / 864e5) % QUOTES.length];
+    var days = {}; (st.days || []).forEach(function (k) { days[k] = true; });
+    var mon = new Date(); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+    var tKey = localDay(new Date()), weekN = 0;
+    var week = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(function (lb, k) {
+      var d = new Date(mon); d.setDate(mon.getDate() + k);
+      var key = localDay(d), on = !!days[key]; if (on) weekN++;
+      return '<div class="d' + (on ? ' on' : '') + (key === tKey ? ' now' : '') + '">' + lb + '<i>' + (on ? '✓' : d.getDate()) + '</i></div>';
+    }).join('');
+    var doneM = {}; (st.todayModes || []).forEach(function (m) { doneM[m] = true; });
+    var vocabN = (boot.vocabList || []).length, seenVocab = false;
+    try { seenVocab = localStorage.getItem('vocabSeen') === tKey; } catch (e) {}
+    var plan = [
+      { k: 'cardio', c: 'H', title: 'Công việc và hội nghị', meta: 'Giao tiếp bên lề hội nghị, trình bày ca bệnh · 15 phút', done: !!doneM.cardio, go: function () { goSpeak('cardio'); } },
+      { k: 'listening', c: 'N', title: 'Luyện nghe hiểu', meta: 'Nghe bài nói hội nghị rồi trả lời · 10 phút', done: !!doneM.listening, go: function () { goSpeak('listening'); } },
+      { k: 'vocab', c: 'T', title: 'Ôn sổ từ', meta: vocabN ? vocabN + ' từ · bấm để nghe phát âm · 5 phút' : 'Sổ từ còn trống, học một buổi là có từ', done: seenVocab || !vocabN, go: function () { setView('vocab'); } },
+      { k: 'friend', c: 'B', title: 'Trò chuyện như bạn bè', meta: 'Tán gẫu, thời sự, kinh tế · 10 phút', done: !!doneM.friend, go: function () { goSpeak('friend'); } }
+    ];
+    var doneN = plan.filter(function (x) { return x.done; }).length;
+    var order = plan.slice().sort(function (a, b) { return a.done - b.done; });
+    var firstOpen = order.filter(function (x) { return !x.done; })[0];
+    var gm = mascot.querySelector('.m3d-img');
+    box.innerHTML =
+      '<div class="greet"><span class="gm">' + (gm ? '<img src="' + gm.getAttribute('src') + '" alt="">' : '') + '</span>' +
+        '<div><h2>' + g[0] + ' ' + g[1] + '</h2><div class="meta">' + dateStr.charAt(0).toUpperCase() + dateStr.slice(1) + ' · học cùng ' + hEsc(teacherName) + '</div></div></div>' +
+      '<div class="kpis">' +
+        '<div class="kpi"><b class="' + (st.streak ? 'hot' : '') + '">' + (st.streak || 0) + (st.streak ? ' 🔥' : '') + '</b><span>Chuỗi ngày</span></div>' +
+        '<div class="kpi"><b>' + (st.weekMinutes || 0) + '</b><span>Phút tuần này</span></div>' +
+        '<div class="kpi"><b>' + (st.sessions || 0) + '</b><span>Buổi đã học</span></div>' +
+        '<div class="kpi"><b>' + (st.vocab || 0) + '</b><span>Từ trong sổ</span></div>' +
+      '</div>' +
+      '<div class="hsec"><div class="plan-head"><div><p class="eyebrow">Tuần này · ' + weekN + '/7 ngày học</p><h3>Điểm danh</h3></div>' +
+        '<span class="badge">' + (st.todayMinutes || 0) + '/' + DAILY_GOAL + ' phút</span></div><div class="week">' + week + '</div><p class="quote">' + quote + '</p></div>' +
+      '<div class="card"><div class="plan-head"><div><p class="eyebrow">Kế hoạch hằng ngày</p><h3>Hôm nay</h3></div>' +
+        '<span>' + ringSvg(doneN / plan.length, doneN + '/' + plan.length) + '</span></div><div id="planList"></div>' +
+        (doneN === plan.length ? '<p class="hfoot" style="color:var(--ok);font-weight:700">Xong hết việc hôm nay 🎉</p>' : '') + '</div>' +
+      '<p class="eyebrow" style="margin:18px 0 8px">Thêm</p><div id="extraList"></div>' +
+      '<p class="hfoot">Mỗi ngày ' + DAILY_GOAL + ' phút: một buổi nói chuyện chuyên môn, một buổi nghe, ôn lại sổ từ.</p>';
+    order.forEach(function (x) { $('planList').appendChild(taskBtn(x, x === firstOpen)); });
+    [
+      { k: 'kids', c: '🧒', title: 'Bé học nói (3 tuổi)', meta: 'Chơi và học cả tiếng Việt lẫn tiếng Anh', go: function () { goSpeak('kids'); } },
+      { k: 'general', c: '💬', title: 'Trò chuyện có hướng dẫn', meta: 'Đời sống, công việc, du lịch, tin tức', go: function () { goSpeak('general'); } },
+      { k: 'ielts', c: '🎯', title: 'Luyện IELTS Speaking', meta: 'Part 1, 2, 3 theo đúng dạng đề', go: function () { goSpeak('ielts'); } }
+    ].forEach(function (x) { $('extraList').appendChild(taskBtn(x, false)); });
+  }
+
+  // ---- Sổ từ: tìm kiếm, bấm để nghe phát âm bằng giọng có sẵn của máy (miễn phí)
+  var enVoice = null;
+  function pickVoice() {
+    try {
+      var vs = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+      enVoice = vs.filter(function (v) { return /^en[-_](US|GB)/i.test(v.lang); })[0] || vs.filter(function (v) { return /^en/i.test(v.lang); })[0] || null;
+    } catch (e) {}
+  }
+  if (window.speechSynthesis) { pickVoice(); try { speechSynthesis.onvoiceschanged = pickVoice; } catch (e) {} }
+  function sayEn(text) {
+    if (!window.speechSynthesis || !text) return;
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = enVoice ? enVoice.lang : 'en-US'; if (enVoice) u.voice = enVoice; u.rate = 0.9;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function renderVocab() {
+    var list = (boot && boot.vocabList) || [], q = ($('vocabQ').value || '').trim().toLowerCase();
+    $('vocabCount').textContent = list.length + ' từ';
+    var box = $('vocabList');
+    box.innerHTML = '';
+    var shown = list.filter(function (v) { return !q || (v.term + ' ' + v.meaning).toLowerCase().indexOf(q) >= 0; });
+    if (!shown.length) {
+      box.innerHTML = '<p class="empty">' + (list.length ? 'Không thấy từ nào khớp.' : 'Sổ từ còn trống. Sau mỗi buổi học, từ và cụm từ đáng học được ghi vào đây.') + '</p>';
+      return;
+    }
+    shown.slice(0, 200).forEach(function (v) {
+      var d = document.createElement('div');
+      d.className = 'vitem';
+      d.innerHTML = '<div class="vt"><b>' + hEsc(v.term) + '</b><button type="button" class="say" aria-label="Nghe phát âm">🔊</button></div>' +
+        (v.meaning ? '<div class="vm">' + hEsc(v.meaning) + '</div>' : '') +
+        (v.example ? '<div class="vx">' + hEsc(v.example) + '</div>' : '') +
+        '<div class="vd">' + hEsc([v.date, v.topic].filter(Boolean).join(' · ')) + '</div>';
+      d.querySelector('.say').addEventListener('click', function () { sayEn(v.term); });
+      var ex = d.querySelector('.vx'); if (ex) ex.addEventListener('click', function () { sayEn(v.example); });
+      box.appendChild(d);
+    });
+  }
+  $('vocabQ').addEventListener('input', renderVocab);
 
   // ---- cài app
   var installEvt = null;
@@ -1316,6 +1628,7 @@
   // ------------------------------------------------------------ bắt đầu / kết thúc
 
   function start() {
+    setView('speak');
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.WebSocket) {
       setStatus('Trình duyệt không hỗ trợ', 'bad', 'Hãy dùng Chrome bản mới trên laptop hoặc Android.');
@@ -1427,7 +1740,12 @@
     server('finishSession', payload).then(function (res) {
       renderSummary(res);
       setStatus(res.saved ? 'Đã lưu buổi học' : 'Chưa lưu được buổi học', res.saved ? 'listen' : 'bad', '');
-      return server('getBootstrap', auth).then(function (b) { if (!b.locked) { renderRecent(b.recent); renderStats(b.stats); } });
+      return server('getBootstrap', auth).then(function (b) {
+        if (b.locked) return;
+        renderRecent(b.recent); renderStats(b.stats);
+        boot.stats = b.stats; boot.recent = b.recent; boot.vocabList = b.vocabList;
+        renderVocab();
+      });
     }).catch(function (e) {
       setStatus('Lỗi khi lưu buổi học', 'bad', e && e.message || String(e));
     }).then(setIdleButton);

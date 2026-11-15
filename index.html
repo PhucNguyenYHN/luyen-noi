@@ -1488,12 +1488,23 @@
       var u = msg.sessionResumptionUpdate;
       if (u.resumable && u.newHandle) S.handle = u.newHandle;
     }
-    if (msg.goAway) { // server sắp đóng kết nối (~10 phút một lần): nối lại và tiếp tục cùng phiên
-      S.ready = false;
-      var old = S.ws;
-      S.ws = null;
-      try { old.close(); } catch (e) {}
-      reconnect();
+    if (msg.goAway) { // server sắp đóng kết nối (~10 phút một lần): lấy sẵn mã mới khi kết nối cũ còn chạy, rồi mới chuyển
+      if (S.goingAway) return;
+      S.goingAway = true;
+      var awayWs = S.ws;
+      server('renewToken', auth).then(function (t) {
+        if (!S) return;
+        S.token = t.token; S.tokenAt = Date.now(); S.tokenMinutes = t.tokenMinutes; S.freshToken = true;
+      }).catch(function (e) { console.error(e); }).then(function () {
+        if (!S || S.ending) return;
+        S.goingAway = false;
+        if (S.ws !== awayWs || awayWs.readyState > 1) return; // kết nối cũ đã tự đóng: onclose đã lo nối lại
+        S.ready = false;
+        var old = S.ws;
+        S.ws = null;
+        try { old.close(); } catch (e) {}
+        reconnect();
+      });
       return;
     }
     var sc = msg.serverContent;
@@ -1528,17 +1539,19 @@
       setIdleButton();
       return;
     }
-    if (!dropSearch && S.retries > 4) {
+    if (!dropSearch && S.retries > 6) {
       stopPlayback();
       setStatus('Mất kết nối', 'bad', (S.started ? 'Bấm "Kết thúc" để lưu và xem tổng kết phần đã học.' :
         'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') + '. Kiểm tra LIVE_MODEL trong sheet Config và hạn mức gói miễn phí.'));
       return;
     }
-    setStatus('Đang kết nối lại…', 'warn', '');
+    setStatus('Đang kết nối lại…', 'warn', S.lastClose ? 'Lý do: ' + S.lastClose : '');
     setMascot('think');
-    var tokenOld = Date.now() - S.tokenAt > (S.tokenMinutes - 2) * 60000;
-    var needToken = tokenOld || S.retries > 1 || !S.handle;
-    var wait = new Promise(function (r) { setTimeout(r, S.retries > 1 ? 1200 * S.retries : 100); });
+    // Mã tạm của Gemini chỉ mở được MỘT phiên và hết hạn mở phiên sau 2 phút, nên lần nối lại nào cũng cần mã mới
+    // (trừ khi vừa lấy sẵn lúc nhận goAway).
+    var needToken = !S.freshToken;
+    S.freshToken = false;
+    var wait = new Promise(function (r) { setTimeout(r, S.retries > 1 ? 1000 * Math.min(S.retries, 5) : 50); });
     var p = needToken ? wait.then(function () { return server('renewToken', auth); }).then(function (t) {
       S.token = t.token; S.tokenAt = Date.now(); S.tokenMinutes = t.tokenMinutes;
     }) : wait;
@@ -1585,7 +1598,7 @@
     idleLead();
     var t = Math.floor((Date.now() - S.startedAt) / 1000);
     var clock = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
-    var sub = S.modeLabel + ' · ' + clock;
+    var sub = S.modeLabel + ' · ' + clock + (S.wakeFailed ? ' · ⚠ Máy có thể tự khóa màn hình làm ngắt buổi học: đặt Cài đặt › Màn hình › Tự động khóa = Không bao giờ' : '');
     if (!S.ready) return; // đang kết nối / nối lại: giữ nguyên dòng hiện có
     if (S.prepLeft > 0) { setStatus('Chuẩn bị: còn ' + S.prepLeft + ' giây', 'warn', sub); setMascot('think'); }
     else if (S.playing.size) { setStatus(teacherName + ' đang nói — có thể ngắt lời', 'speak', sub); setMascot('speak'); }
@@ -1738,9 +1751,13 @@
 
   // Giữ màn hình sáng suốt buổi học (iPhone/Android tự nhả khóa khi app bị ẩn, nên xin lại mỗi lần quay lại).
   function keepAwake() {
-    if (!S || !navigator.wakeLock || document.hidden) return;
+    if (!S || document.hidden) return;
+    if (!navigator.wakeLock) { S.wakeFailed = true; return; }
     if (S.wake && !S.wake.released) return;
-    try { navigator.wakeLock.request('screen').then(function (w) { if (S) S.wake = w; else w.release(); }).catch(function () {}); } catch (e) {}
+    try {
+      navigator.wakeLock.request('screen').then(function (w) { if (S) { S.wake = w; S.wakeFailed = false; } else w.release(); })
+        .catch(function () { if (S) S.wakeFailed = true; });
+    } catch (e) { S.wakeFailed = true; }
   }
 
   // Tắt màn hình / chuyển app: iPhone dừng micro và loa của trang web. Quay lại thì tự bật lại và nối tiếp đúng buổi.

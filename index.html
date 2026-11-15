@@ -1432,6 +1432,14 @@
 
   // ------------------------------------------------------------ WebSocket tới Gemini Live
 
+  // Nhật ký kết nối: gửi kèm khi lưu buổi học (ghi cuối ô Bản ghi chữ) để tìm nguyên nhân rớt mạng.
+  function netLog(what) {
+    if (!S) return;
+    var t = Math.floor((Date.now() - S.startedAt) / 1000);
+    (S.net = S.net || []).push(Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2) + ' ' + what);
+    if (S.net.length > 60) S.net.shift();
+  }
+
   function sendText(text) {
     if (S && S.ready && S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify({ realtimeInput: { text: text } }));
   }
@@ -1459,6 +1467,7 @@
       if (!S || S.ws !== ws || S.ending) return;
       S.ready = false;
       S.lastClose = ev.code + (ev.reason ? ' ' + ev.reason : '');
+      netLog('đóng ' + S.lastClose + (navigator.onLine === false ? ' (mất mạng)' : '') + (document.hidden ? ' (app bị ẩn)' : ''));
       console.warn('WebSocket đóng:', S.lastClose);
       reconnect();
     };
@@ -1466,6 +1475,7 @@
 
   function handle(msg) {
     if (msg.setupComplete) {
+      if (S.started) netLog('nối lại xong sau ' + Math.round((Date.now() - (S.reconnAt || Date.now())) / 1000) + ' s');
       S.ready = true;
       S.retries = 0;
       if (!S.started) {
@@ -1491,6 +1501,7 @@
     if (msg.goAway) { // server sắp đóng kết nối (~10 phút một lần): lấy sẵn mã mới khi kết nối cũ còn chạy, rồi mới chuyển
       if (S.goingAway) return;
       S.goingAway = true;
+      netLog('goAway ' + JSON.stringify(msg.goAway.timeLeft || ''));
       var awayWs = S.ws;
       server('renewToken', auth).then(function (t) {
         if (!S) return;
@@ -1549,7 +1560,9 @@
     setMascot('think');
     // Mã tạm của Gemini chỉ mở được MỘT phiên và hết hạn mở phiên sau 2 phút, nên lần nối lại nào cũng cần mã mới
     // (trừ khi vừa lấy sẵn lúc nhận goAway).
+    if (S.retries === 1) S.reconnAt = Date.now();
     var needToken = !S.freshToken;
+    netLog('nối lại lần ' + S.retries + (needToken ? ', lấy mã mới' : ''));
     S.freshToken = false;
     var wait = new Promise(function (r) { setTimeout(r, S.retries > 1 ? 1000 * Math.min(S.retries, 5) : 50); });
     var p = needToken ? wait.then(function () { return server('renewToken', auth); }).then(function (t) {
@@ -1557,6 +1570,7 @@
     }) : wait;
     p.then(function () { if (S && !S.ending) connect(); }).catch(function (e) {
       console.error(e);
+      netLog('lỗi lấy mã: ' + (e && e.message || e));
       if (S && !S.ending) reconnect();
     });
   }
@@ -1764,6 +1778,7 @@
   function onHidden() {
     if (!S || S.ending) return;
     S.hiddenAt = Date.now();
+    netLog('app bị ẩn / khóa màn hình');
     try { stopPlayback(); } catch (e) {}
   }
   function onVisible() {
@@ -1776,6 +1791,7 @@
     S.nextTime = 0;
     var track = S.stream && S.stream.getAudioTracks()[0];
     var micDead = !track || track.readyState === 'ended' || track.muted;
+    netLog('mở lại sau ' + Math.round(away / 1000) + ' s' + (micDead ? ', bật lại micro' : '') + ', kết nối ' + (S.ws ? S.ws.readyState : 'không có'));
     var p = Promise.resolve();
     if (micDead) {
       p = navigator.mediaDevices.getUserMedia({
@@ -1830,7 +1846,8 @@
       modeLabel: S.modeLabel,
       topic: el.topic.value,
       durationSec: Math.round((Date.now() - S.startedAt) / 1000),
-      transcript: S.items.map(function (it) { return { role: it.role, text: it.text }; })
+      transcript: S.items.map(function (it) { return { role: it.role, text: it.text }; }),
+      netLog: S.net || []
     };
     cleanup();
     el.mainBtn.disabled = true;

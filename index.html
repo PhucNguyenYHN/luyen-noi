@@ -298,6 +298,9 @@
   }
   .roundbtn.active { background: var(--warn); border-color: var(--warn); color: #fff; }
   .roundbtn.ghostspace { visibility: hidden; }
+  .roundbtn.ptt { box-shadow: 0 0 0 3px var(--accent, #6d4aff), 0 6px 18px rgba(109,74,255,.35); }
+  .roundbtn.ptt.active { background: #c93c4e; color: #fff; box-shadow: 0 0 0 3px #c93c4e, 0 6px 18px rgba(201,60,78,.4); }
+  #meter.gated i { opacity: .3; }
   #status { margin: 10px 0 0; font-size: 15px; }
   #sub { font-size: 12.5px; }
   .sheet .tools { justify-content: flex-start; }
@@ -510,6 +513,7 @@
         <h3>Trong buổi học</h3>
         <div class="tools" id="tools">
           <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
+          <button id="calBtn" class="hidden" title="Đo độ to giọng của bạn để lọc tiếng người khác">🎚️ Đo giọng của tôi</button>
           <button id="ideaBtn" title="Bí ý: nhờ giáo viên gợi ý vài ý và câu mở đầu">💡 Gợi ý ý tưởng</button>
           <button id="topicBtn" title="Chuyển sang một góc chuyện mới, thú vị hơn">🔀 Đổi chủ đề</button>
           <button id="slowBtn" title="Nhờ nói lại câu vừa rồi, chậm hơn">Nói chậm lại</button>
@@ -551,6 +555,16 @@
       <section id="kidTeachSec" class="setup-only hidden">
         <h3>Cách giáo viên dạy</h3>
         <div class="tip">Chế độ Bé học nói dùng cách dạy riêng cho trẻ 3 tuổi, nên tính cách, mức sửa lỗi và ngôn ngữ giảng được ẩn. Chọn chế độ khác ở mục Bài học để chỉnh lại các mục này.</div>
+      </section>
+
+      <section id="noiseSec" class="setup-only">
+        <h3>Nhà ồn, nhiều người nói</h3>
+        <select id="noiseSel" aria-label="Chế độ nhà ồn">
+          <option value="off" selected>Tắt (nói tự do như bình thường)</option>
+          <option value="ptt">Bấm để nói: chỉ nghe khi tôi bấm 🎙️, chắc nhất</option>
+          <option value="gate">Lọc theo độ to: chỉ nhận giọng to như giọng tôi</option>
+        </select>
+        <div class="tip">Hai chế độ này cũng không cho tiếng bên ngoài cắt ngang lời giáo viên; muốn ngắt giáo viên thì chạm vào nhân vật. Dùng tai nghe có micro thì hiệu quả hơn nhiều. Chế độ lọc theo độ to cần bấm “Đo giọng của tôi” một lần trong buổi học (💬 Menu).</div>
       </section>
 
       <section id="teachSec" class="setup-only">
@@ -726,7 +740,8 @@
   }
   // Chạm vào nhân vật: nhảy nảy lên một cái.
   mascot.addEventListener('click', function () {
-    if (S) nudgeReply(false);
+    if (S && S.noisy && S.noisy !== 'off' && (S.playing.size || S.aiTurnOpen)) cutTeacher();
+    else if (S) nudgeReply(false);
     var m = mascot.querySelector('.m3d');
     if (!m) return;
     m.classList.remove('poke'); void m.offsetWidth; m.classList.add('poke');
@@ -1020,7 +1035,7 @@
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
     searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
     // Các ô chọn đơn giản: nhớ lựa chọn trên từng thiết bị.
-    ['langSel:lang', 'personaSel:persona'].forEach(function (pair) {
+    ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy'].forEach(function (pair) {
       var p = pair.split(':'), sel = $(p[0]), key = p[1];
       try {
         var sv0 = localStorage.getItem(key);
@@ -1342,6 +1357,8 @@
   // ------------------------------------------------------------ âm thanh ra
 
   function playChunk(b64) {
+    S.aiTurnOpen = true;
+    if (S.dropAudio) return; // người học đã ngắt: bỏ nốt phần còn lại của lượt này
     var bin = atob(b64);
     var n = bin.length >> 1;
     var f32 = new Float32Array(n);
@@ -1366,6 +1383,13 @@
       if (!S.playing.size) refreshStatus();
     };
     refreshStatus();
+  }
+
+  function cutTeacher() {
+    if (!S || !S.playing.size && !S.aiTurnOpen) return;
+    stopPlayback();
+    if (S.aiTurnOpen) S.dropAudio = true;
+    closeBubbles('ai');
   }
 
   function stopPlayback() {
@@ -1393,8 +1417,17 @@
     S.micLevel = S.muted ? 0 : Math.min(1, rms * 6);
     S.micLevelAvg = (S.micLevelAvg || 0) * 0.97 + S.micLevel * 0.03;
 
+    if (S.calib) { S.calib.push(rms); return; } // đang đo giọng: chưa gửi gì lên
     if (S.muted || !S.ready || !S.ws || S.ws.readyState !== 1) return;
     if (S.holdMicUntil && Date.now() < S.holdMicUntil) return;
+    if (S.noisy === 'gate' && S.voiceRef) {
+      // Chỉ nhận tiếng to bằng giọng mình; giữ cổng mở thêm 0,5 giây để không cụt cuối câu.
+      var now0 = Date.now();
+      if (rms >= Math.max(0.012, S.voiceRef * 0.45)) S.gateUntil = now0 + 500;
+      var open = now0 < (S.gateUntil || 0);
+      el.meter.classList.toggle('gated', !open);
+      if (!open) f32 = new Float32Array(f32.length); // gửi im lặng để Gemini vẫn thấy dòng âm thanh liên tục
+    }
     var bytes = new Uint8Array(f32.length * 2);
     var view = new DataView(bytes.buffer);
     for (var j = 0; j < f32.length; j++) {
@@ -1475,6 +1508,7 @@
 
   function handle(msg) {
     if (msg.setupComplete) {
+      S.aiTurnOpen = false; S.dropAudio = false;
       if (S.started) netLog('nối lại xong sau ' + Math.round((Date.now() - (S.reconnAt || Date.now())) / 1000) + ' s');
       S.ready = true;
       S.retries = 0;
@@ -1529,7 +1563,7 @@
         if (p.inlineData && p.inlineData.data && /^audio\//.test(p.inlineData.mimeType || 'audio/pcm')) playChunk(p.inlineData.data);
       });
     }
-    if (sc.turnComplete) closeBubbles();
+    if (sc.turnComplete) { S.aiTurnOpen = false; S.dropAudio = false; closeBubbles(); }
   }
 
   function reconnect() {
@@ -1612,11 +1646,13 @@
     idleLead();
     var t = Math.floor((Date.now() - S.startedAt) / 1000);
     var clock = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
-    var sub = S.modeLabel + ' · ' + clock + (S.wakeFailed ? ' · ⚠ Máy có thể tự khóa màn hình làm ngắt buổi học: đặt Cài đặt › Màn hình › Tự động khóa = Không bao giờ' : '');
+    var sub = S.modeLabel + ' · ' + clock + (S.noisy === 'gate' && !S.voiceRef ? ' · chưa đo giọng (💬 → Đo giọng của tôi)' : '') + (S.wakeFailed ? ' · ⚠ Máy có thể tự khóa màn hình làm ngắt buổi học: đặt Cài đặt › Màn hình › Tự động khóa = Không bao giờ' : '');
     if (!S.ready) return; // đang kết nối / nối lại: giữ nguyên dòng hiện có
     if (S.prepLeft > 0) { setStatus('Chuẩn bị: còn ' + S.prepLeft + ' giây', 'warn', sub); setMascot('think'); }
     else if (S.playing.size) { setStatus(teacherName + ' đang nói — có thể ngắt lời', 'speak', sub); setMascot('speak'); }
+    else if (S.muted && S.noisy === 'ptt') { setStatus('Bấm 🎙️ để nói', 'warn', sub); setMascot('idle'); }
     else if (S.muted) { setStatus('Micro đang tắt', 'warn', sub); setMascot('idle'); }
+    else if (S.noisy === 'ptt') { setStatus('Đang nghe… bấm ⏹️ khi nói xong', 'listen', sub); setMascot('listen'); }
     else if (S.nudgedAt && Date.now() - S.nudgedAt < 2500) { setMascot('think'); }
     else { setStatus('Đang nghe… (chạm nhân vật nếu chưa thấy trả lời)', 'listen', sub); setMascot('listen'); }
   }
@@ -1624,8 +1660,10 @@
   function setMuted(m) {
     S.muted = m;
     el.muteBtn.classList.toggle('active', m);
-    el.muteBtn.textContent = m ? '🔇' : '🎙️';
-    el.muteBtn.setAttribute('aria-label', m ? 'Bật micro' : 'Tắt micro');
+    var ptt = S.noisy === 'ptt';
+    el.muteBtn.textContent = ptt ? (m ? '🎙️' : '⏹️') : (m ? '🔇' : '🎙️');
+    el.muteBtn.classList.toggle('ptt', ptt);
+    el.muteBtn.setAttribute('aria-label', ptt ? (m ? 'Bấm để nói' : 'Bấm khi nói xong') : (m ? 'Bật micro' : 'Tắt micro'));
     if (m && S.ready && S.ws && S.ws.readyState === 1) S.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } }));
     refreshStatus();
   }
@@ -1639,7 +1677,32 @@
     if (announce) sendText('My preparation time is over. I am ready to give my Part 2 talk now.');
   }
 
-  el.muteBtn.addEventListener('click', function () { if (S && !(S.prepLeft > 0)) setMuted(!S.muted); });
+  el.muteBtn.addEventListener('click', function () {
+    if (!S || S.prepLeft > 0) return;
+    if (S.noisy === 'ptt' && S.muted) cutTeacher(); // bấm để nói: dừng giáo viên ngay nếu đang nói
+    setMuted(!S.muted);
+  });
+
+  // Đo độ to giọng của mình (4 giây) để chế độ "lọc theo độ to" biết ngưỡng.
+  $('calBtn').addEventListener('click', function () {
+    if (!S || S.calib) return;
+    if (S.playing.size) { setStatus('Đợi ' + teacherName + ' nói xong rồi đo nhé', 'warn'); return; }
+    closeSettings();
+    S.calib = [];
+    setStatus('Hãy nói bình thường trong 4 giây…', 'warn', 'Ví dụ: “Hello, this is my normal speaking voice, nice to meet you.”');
+    setTimeout(function () {
+      if (!S) return;
+      var a = S.calib.slice().sort(function (x, y) { return x - y; });
+      S.calib = null;
+      var floor = a.length ? a[Math.floor(a.length * 0.2)] : 0;
+      var voice = a.filter(function (v) { return v > Math.max(0.01, floor * 2.5); });
+      if (voice.length < 6) { setStatus('Chưa nghe thấy giọng', 'bad', 'Bấm “Đo giọng của tôi” lại và nói to rõ hơn.'); return; }
+      voice.sort(function (x, y) { return x - y; });
+      S.voiceRef = voice[Math.floor(voice.length / 2)];
+      try { localStorage.setItem('voiceRef', String(S.voiceRef)); } catch (e) {}
+      setStatus('Đã đo xong giọng của bạn', 'listen', 'Giờ chỉ tiếng to bằng giọng này mới được nhận.');
+    }, 4000);
+  });
   el.reviewBtn.addEventListener('click', function () { sendText('review'); });
   $('ideaBtn').addEventListener('click', function () {
     sendText('I am stuck for ideas. Give me two or three quick ideas of what I could say about this, each with an easy English sentence starter ' +
@@ -1725,7 +1788,7 @@
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
       correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
-      persona: $('personaSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
+      persona: $('personaSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -1749,6 +1812,13 @@
       el.mainBtn.classList.add('on');
       el.mainBtn.textContent = 'Kết thúc';
       S.kids = !!info.kids;
+      S.noisy = req.noisy || 'off';
+      S.voiceRef = 0;
+      try { S.voiceRef = parseFloat(localStorage.getItem('voiceRef')) || 0; } catch (e) {}
+      $('calBtn').classList.toggle('hidden', S.noisy !== 'gate');
+      if (S.noisy === 'ptt') setMuted(true);
+      else if (S.noisy === 'gate' && !S.voiceRef) setStatus('Chưa đo giọng', 'warn', 'Bấm 💬 → “Đo giọng của tôi” để bật chế độ lọc.');
+      else if (S.noisy === 'off') setMuted(false);
       S.tick = setInterval(refreshStatus, 1000);
       keepAwake();
       connect();
@@ -1833,7 +1903,7 @@
     S = null;
     document.body.classList.remove('in-session');
     ['muteBtn', 'toolsBtn'].forEach(function (id) { $(id).classList.add('ghostspace'); });
-    el.muteBtn.classList.remove('active'); el.muteBtn.textContent = '🎙️';
+    el.muteBtn.classList.remove('active', 'ptt'); el.muteBtn.textContent = '🎙️'; el.meter.classList.remove('gated'); $('calBtn').classList.add('hidden');
     idleCaption('Bấm nút để bắt đầu nói chuyện');
     $('bars').classList.add('hidden');
     showLevel(0, 'listen');

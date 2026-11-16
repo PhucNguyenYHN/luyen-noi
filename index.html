@@ -582,6 +582,13 @@
           <option value="major">Chỉ sửa lỗi lớn</option>
           <option value="end">Không sửa khi nói, xem ở tổng kết</option>
         </select>
+        <label for="pronSel">Mức chuẩn phát âm</label>
+        <select id="pronSel">
+          <option value="easy">Thoải mái: nghe hiểu được là đạt (khoảng 60% khớp)</option>
+          <option value="normal" selected>Vừa phải: rõ ràng, giọng Việt không sao (khoảng 75%)</option>
+          <option value="strict">Khắt khe: gần như người bản xứ (khoảng 90%)</option>
+        </select>
+        <div class="tip">Quyết định khi nào một từ hoặc câu được tính là đạt và cho nói lại mấy lần. Giáo viên không đo được phần trăm thật, con số chỉ là mốc khắt khe. Lỗi ngữ pháp vẫn theo mục “Sửa lỗi” phía trên.</div>
         <label for="langSel">Ngôn ngữ giảng</label>
         <select id="langSel">
           <option value="vi_much" selected>Song ngữ Việt – Anh</option>
@@ -1035,7 +1042,7 @@
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
     searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
     // Các ô chọn đơn giản: nhớ lựa chọn trên từng thiết bị.
-    ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy'].forEach(function (pair) {
+    ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy', 'pronSel:pron'].forEach(function (pair) {
       var p = pair.split(':'), sel = $(p[0]), key = p[1];
       try {
         var sv0 = localStorage.getItem(key);
@@ -1788,7 +1795,7 @@
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
       correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
-      persona: $('personaSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
+      persona: $('personaSel').value, pron: $('pronSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {

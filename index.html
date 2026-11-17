@@ -626,7 +626,9 @@
           <option value="normal">Vừa: chờ khoảng 2,5 giây</option>
           <option value="slow" selected>Chậm: chờ khoảng 3,5 giây</option>
           <option value="think">Cho tôi nghĩ: chờ 6 giây rồi mới trả lời</option>
+          <option value="custom">Tự chọn số giây…</option>
         </select>
+        <div id="waitSecRow" class="hidden" style="margin-top:6px"><input type="number" id="waitSec" min="1" max="20" step="0.5" value="5" inputmode="decimal" style="width:90px"> <span class="tip" style="display:inline">giây (1 đến 20)</span></div>
         <label for="langSel">Ngôn ngữ giảng</label>
         <select id="langSel">
           <option value="vi_much" selected>Song ngữ Việt – Anh</option>
@@ -1152,6 +1154,12 @@
   $('gearBtn').addEventListener('click', openSettings);
 
   // ---- màn đang xem: Hôm nay · Luyện nói · Sổ từ · Menu (tab nổi dưới, học từ app ôn IELTS)
+  function waitSecVal() { var n = parseFloat($('waitSec').value); return n > 0 ? Math.max(1, Math.min(20, n)) : 5; }
+  function syncWaitRow() { $('waitSecRow').classList.toggle('hidden', $('waitSel').value !== 'custom'); }
+  try { var ws0 = localStorage.getItem('waitSec'); if (ws0) $('waitSec').value = ws0; } catch (e) {}
+  $('waitSel').addEventListener('change', syncWaitRow);
+  $('waitSec').addEventListener('change', function () { try { localStorage.setItem('waitSec', String(waitSecVal())); } catch (e) {} });
+  setTimeout(syncWaitRow, 0);
   var VIEW = 'home';
   try { VIEW = localStorage.getItem('view') || 'home'; } catch (e) {}
   if (['home', 'speak', 'vocab', 'path'].indexOf(VIEW) < 0) VIEW = 'home';
@@ -1738,7 +1746,7 @@
     return true;
   }
   // Tự "mời trả lời" sau khi người học im bao lâu: phải dài hơn thời gian chờ của máy chủ, nếu không sẽ nhảy vào lúc còn đang nghĩ.
-  function nudgeDelay() { return { fast: 4000, slow: 9000, think: 9000 }[S.waitMode] || 6500; }
+  function nudgeDelay() { return { fast: 4000, slow: 9000, think: 9000 }[S.waitMode] || (S.waitMode === 'custom' ? Math.round(S.waitSec * 1000) + 4000 : 6500); }
   function autoNudge() {
     if (!S || !S.ready || S.playing.size || S.muted || !S.lastUserAt) return;
     var now = Date.now();
@@ -1750,7 +1758,7 @@
   // Giáo viên nói xong mà người học im lâu (bí ý): nhắc giáo viên chủ động dẫn dắt. Mỗi lượt của giáo viên chỉ nhắc một lần.
   function idleLead() {
     if (!S || !S.ready || S.playing.size || S.muted || S.prepLeft > 0 || !S.lastAiAt || document.hidden) return;
-    var now = Date.now(), quiet = S.kids ? 9000 : (S.waitMode === 'think' ? 14000 : 13000);
+    var now = Date.now(), quiet = S.kids ? 9000 : (S.waitMode === 'think' ? 14000 : S.waitMode === 'custom' ? Math.max(13000, S.waitSec * 1000 + 8000) : 13000);
     if ((S.lastUserAt || 0) > S.lastAiAt || now - S.lastAiAt < quiet) return;
     if ((S.leadAt || 0) >= S.lastAiAt) return;
     if (S.micLevelAvg > 0.25) return; // vẫn đang có tiếng nói, chưa phải im lặng
@@ -1915,7 +1923,7 @@
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
       correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
-      unitId: el.mode.value === 'path' ? pendingUnit : '', persona: $('personaSel').value, pron: $('pronSel').value, wait: $('waitSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
+      unitId: el.mode.value === 'path' ? pendingUnit : '', persona: $('personaSel').value, pron: $('pronSel').value, wait: $('waitSel').value, waitSec: waitSecVal(), noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -1939,7 +1947,7 @@
       el.mainBtn.classList.add('on');
       el.mainBtn.textContent = 'Kết thúc';
       S.kids = !!info.kids;
-      S.waitMode = req.wait || 'normal';
+      S.waitMode = req.wait || 'normal'; S.waitSec = req.waitSec || 5;
       S.noisy = req.noisy || 'off';
       S.voiceRef = 0;
       try { S.voiceRef = parseFloat(localStorage.getItem('voiceRef')) || 0; } catch (e) {}

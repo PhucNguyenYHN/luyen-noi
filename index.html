@@ -1240,6 +1240,7 @@
     order.forEach(function (x) { $('planList').appendChild(taskBtn(x, x === firstOpen)); });
     [
       { k: 'kids', c: '🧒', title: 'Bé học nói (3 tuổi)', meta: 'Chơi và học cả tiếng Việt lẫn tiếng Anh', go: function () { goSpeak('kids'); } },
+      { k: 'patterns', c: '🔤', title: 'Câu mẫu và cấu trúc câu', meta: '500–1000 câu hay gặp, thay từ vào mẫu câu', go: function () { goSpeak('patterns'); } },
       { k: 'general', c: '💬', title: 'Trò chuyện có hướng dẫn', meta: 'Đời sống, công việc, du lịch, tin tức', go: function () { goSpeak('general'); } },
       { k: 'ielts', c: '🎯', title: 'Luyện IELTS Speaking', meta: 'Part 1, 2, 3 theo đúng dạng đề', go: function () { goSpeak('ielts'); } }
     ].forEach(function (x) { $('extraList').appendChild(taskBtn(x, false)); });

@@ -589,6 +589,12 @@
           <option value="strict">Khắt khe: gần như người bản xứ (khoảng 90%)</option>
         </select>
         <div class="tip">Quyết định khi nào một từ hoặc câu được tính là đạt và cho nói lại mấy lần. Giáo viên không đo được phần trăm thật, con số chỉ là mốc khắt khe. Lỗi ngữ pháp vẫn theo mục “Sửa lỗi” phía trên.</div>
+        <label for="waitSel">Chờ tôi nói xong</label>
+        <select id="waitSel">
+          <option value="fast">Nhanh: trả lời ngay khi tôi ngừng (hay nhảy vào khi tôi ngập ngừng)</option>
+          <option value="normal" selected>Vừa: chờ khoảng 2 giây</option>
+          <option value="slow">Chậm: chờ khoảng 3 giây, hợp khi tôi hay nghĩ giữa câu</option>
+        </select>
         <label for="langSel">Ngôn ngữ giảng</label>
         <select id="langSel">
           <option value="vi_much" selected>Song ngữ Việt – Anh</option>
@@ -1042,7 +1048,7 @@
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
     searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
     // Các ô chọn đơn giản: nhớ lựa chọn trên từng thiết bị.
-    ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy', 'pronSel:pron'].forEach(function (pair) {
+    ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy', 'pronSel:pron', 'waitSel:wait'].forEach(function (pair) {
       var p = pair.split(':'), sel = $(p[0]), key = p[1];
       try {
         var sv0 = localStorage.getItem(key);
@@ -1627,10 +1633,12 @@
     setStatus(auto ? 'Mời ' + teacherName + ' trả lời…' : 'Đã mời ' + teacherName + ' trả lời…', 'warn');
     return true;
   }
+  // Tự "mời trả lời" sau khi người học im bao lâu: phải dài hơn thời gian chờ của máy chủ, nếu không sẽ nhảy vào lúc còn đang nghĩ.
+  function nudgeDelay() { return { fast: 4000, slow: 9000 }[S.waitMode] || 6500; }
   function autoNudge() {
     if (!S || !S.ready || S.playing.size || S.muted || !S.lastUserAt) return;
     var now = Date.now();
-    if (S.lastUserAt <= (S.lastAiAt || 0) || now - S.lastUserAt < 4000) return; // giáo viên đã trả lời, hoặc vừa mới nói xong
+    if (S.lastUserAt <= (S.lastAiAt || 0) || now - S.lastUserAt < nudgeDelay()) return; // giáo viên đã trả lời, hoặc vừa mới nói xong
     if (S.nudgedAt && S.nudgedAt >= S.lastUserAt) return; // đã mời cho câu này rồi
     nudgeReply(true);
   }
@@ -1795,7 +1803,7 @@
     var req = { mode: el.mode.value, sub: el.subMode.value, topic: el.topic.value, auth: auth,
       voice: $('voiceSel').value, speed: $('speedSel').value,
       correct: $('correctSel').value, search: $('searchChk').checked, lang: $('langSel').value,
-      persona: $('personaSel').value, pron: $('pronSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
+      persona: $('personaSel').value, pron: $('pronSel').value, wait: $('waitSel').value, noisy: $('noiseSel').value, name: teacherName, mascot: mascotSel.value, kidName: $('kidName').value };
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
     }).then(function (stream) {
@@ -1819,6 +1827,7 @@
       el.mainBtn.classList.add('on');
       el.mainBtn.textContent = 'Kết thúc';
       S.kids = !!info.kids;
+      S.waitMode = req.wait || 'normal';
       S.noisy = req.noisy || 'off';
       S.voiceRef = 0;
       try { S.voiceRef = parseFloat(localStorage.getItem('voiceRef')) || 0; } catch (e) {}

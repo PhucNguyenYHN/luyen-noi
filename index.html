@@ -624,8 +624,8 @@
         <select id="waitSel">
           <option value="fast">Nhanh: trả lời ngay khi tôi ngừng (hay nhảy vào khi tôi ngập ngừng)</option>
           <option value="normal">Vừa: chờ khoảng 2,5 giây</option>
-          <option value="slow">Chậm: chờ khoảng 3,5 giây</option>
-          <option value="think" selected>Cho tôi nghĩ: chờ 10 giây rồi mới trả lời</option>
+          <option value="slow" selected>Chậm: chờ khoảng 3,5 giây</option>
+          <option value="think">Cho tôi nghĩ: chờ 6 giây rồi mới trả lời</option>
         </select>
         <label for="langSel">Ngôn ngữ giảng</label>
         <select id="langSel">
@@ -1738,7 +1738,7 @@
     return true;
   }
   // Tự "mời trả lời" sau khi người học im bao lâu: phải dài hơn thời gian chờ của máy chủ, nếu không sẽ nhảy vào lúc còn đang nghĩ.
-  function nudgeDelay() { return { fast: 4000, slow: 9000, think: 13000 }[S.waitMode] || 6500; }
+  function nudgeDelay() { return { fast: 4000, slow: 9000, think: 9000 }[S.waitMode] || 6500; }
   function autoNudge() {
     if (!S || !S.ready || S.playing.size || S.muted || !S.lastUserAt) return;
     var now = Date.now();
@@ -1750,7 +1750,7 @@
   // Giáo viên nói xong mà người học im lâu (bí ý): nhắc giáo viên chủ động dẫn dắt. Mỗi lượt của giáo viên chỉ nhắc một lần.
   function idleLead() {
     if (!S || !S.ready || S.playing.size || S.muted || S.prepLeft > 0 || !S.lastAiAt || document.hidden) return;
-    var now = Date.now(), quiet = S.kids ? 9000 : (S.waitMode === 'think' ? 20000 : 13000);
+    var now = Date.now(), quiet = S.kids ? 9000 : (S.waitMode === 'think' ? 14000 : 13000);
     if ((S.lastUserAt || 0) > S.lastAiAt || now - S.lastAiAt < quiet) return;
     if ((S.leadAt || 0) >= S.lastAiAt) return;
     if (S.micLevelAvg > 0.25) return; // vẫn đang có tiếng nói, chưa phải im lặng

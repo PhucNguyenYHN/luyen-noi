@@ -301,6 +301,13 @@
   .roundbtn.ptt { box-shadow: 0 0 0 3px var(--accent, #6d4aff), 0 6px 18px rgba(109,74,255,.35); }
   .roundbtn.ptt.active { background: #c93c4e; color: #fff; box-shadow: 0 0 0 3px #c93c4e, 0 6px 18px rgba(201,60,78,.4); }
   #meter.gated i { opacity: .3; }
+  .resume { position: fixed; inset: 0; z-index: 60; background: rgba(20,16,40,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .resume-card { background: var(--card); color: var(--ink); border-radius: 22px; padding: 22px 20px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+  .resume-card b { font-size: 18px; }
+  .resume-card p { margin: 10px 0 16px; font-size: 14.5px; line-height: 1.45; color: var(--muted); }
+  .resume-go { width: 100%; padding: 15px; font-size: 17px; font-weight: 700; border: 0; border-radius: 14px; background: var(--brand, #6d4aff); color: #fff; }
+  .resume-go:disabled { opacity: .6; }
+  .resume-card .ghost { width: 100%; margin-top: 10px; }
   #status { margin: 10px 0 0; font-size: 15px; }
   #sub { font-size: 12.5px; }
   .sheet .tools { justify-content: flex-start; }
@@ -664,6 +671,15 @@
   <button type="button" data-v="vocab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6"/></svg><span>Sổ từ</span></button>
   <button type="button" data-v="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></button>
 </nav>
+
+<div id="resumeBar" class="resume hidden" role="alertdialog" aria-labelledby="resumeTitle">
+  <div class="resume-card">
+    <b id="resumeTitle">Buổi học đang tạm dừng</b>
+    <p id="resumeMsg"></p>
+    <button id="resumeBtn" class="resume-go">▶ Tiếp tục</button>
+    <button id="resumeEnd" class="ghost">Kết thúc buổi học</button>
+  </div>
+</div>
 
 <div id="iosGuide" class="guide hidden" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
   <div class="guide-card">
@@ -1431,6 +1447,7 @@
     S.micLevel = S.muted ? 0 : Math.min(1, rms * 6);
     S.micLevelAvg = (S.micLevelAvg || 0) * 0.97 + S.micLevel * 0.03;
 
+    if (S.paused) return;
     if (S.calib) { S.calib.push(rms); return; } // đang đo giọng: chưa gửi gì lên
     if (S.muted || !S.ready || !S.ws || S.ws.readyState !== 1) return;
     if (S.holdMicUntil && Date.now() < S.holdMicUntil) return;
@@ -1582,7 +1599,7 @@
 
   function reconnect() {
     if (!S || S.ending) return;
-    if (document.hidden && S.started) { S.ready = false; return; } // máy đang khóa: đợi quay lại app rồi mới nối (onVisible)
+    if ((document.hidden || S.paused || S.resuming) && S.started) { S.ready = false; return; } // máy đang khóa: đợi quay lại app rồi mới nối (onVisible)
     S.retries = (S.retries || 0) + 1;
     // Tra Google là tính năng thử nghiệm: nếu phiên không mở được khi có nó thì thử lại một lần không có.
     var dropSearch = !S.started && S.setup && S.setup.setup.tools;
@@ -1657,12 +1674,20 @@
   }
 
   function refreshStatus() {
-    if (!S || S.ending) return;
+    if (!S || S.ending || S.paused || S.resuming) return;
     autoNudge();
     idleLead();
     var t = Math.floor((Date.now() - S.startedAt) / 1000);
     var clock = Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
     var sub = S.modeLabel + ' · ' + clock + (S.noisy === 'gate' && !S.voiceRef ? ' · chưa đo giọng (💬 → Đo giọng của tôi)' : '') + (S.wakeFailed ? ' · ⚠ Máy có thể tự khóa màn hình làm ngắt buổi học: đặt Cài đặt › Màn hình › Tự động khóa = Không bao giờ' : '');
+    if (S.ready) S.okAt = Date.now();
+    else if (S.started && !document.hidden && Date.now() - (S.okAt || S.startedAt) > 25000) {
+      // Nối lại mãi không được: đừng để màn hình treo, đưa nút bấm để dựng lại từ đầu.
+      S.paused = true;
+      netLog('mất kết nối quá 25 s');
+      showResume('Mất kết nối khá lâu', 'Mạng hoặc kết nối với giáo viên bị đứt. Bấm Tiếp tục để nối lại, vẫn giữ phần đã học.');
+      return;
+    }
     if (!S.ready) return; // đang kết nối / nối lại: giữ nguyên dòng hiện có
     if (S.prepLeft > 0) { setStatus('Chuẩn bị: còn ' + S.prepLeft + ' giây', 'warn', sub); setMascot('think'); }
     else if (S.playing.size) { setStatus(teacherName + ' đang nói — có thể ngắt lời', 'speak', sub); setMascot('speak'); }
@@ -1861,10 +1886,27 @@
     } catch (e) { S.wakeFailed = true; }
   }
 
-  // Tắt màn hình / chuyển app: iPhone dừng micro và loa của trang web. Quay lại thì tự bật lại và nối tiếp đúng buổi.
+  // Tắt màn hình / chuyển app: iPhone cắt micro, loa và có thể làm kết nối chết ngầm. Quay lại thì KHÔNG tự bật lại
+  // (iPhone chỉ cho bật âm thanh khi người dùng chạm), mà hiện nút "Tiếp tục" rồi dựng lại micro, loa và kết nối từ đầu.
+  function withTimeout(p, ms, what) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(new Error(what + ' quá lâu')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
+  function showResume(title, msg, btn) {
+    $('resumeTitle').textContent = title;
+    $('resumeMsg').textContent = msg;
+    $('resumeBtn').disabled = false;
+    $('resumeBtn').textContent = btn || '▶ Tiếp tục';
+    $('resumeBar').classList.remove('hidden');
+  }
+  function hideResume() { $('resumeBar').classList.add('hidden'); }
+
   function onHidden() {
     if (!S || S.ending) return;
     S.hiddenAt = Date.now();
+    S.paused = true; // ngừng gửi âm thanh ngay, đỡ đẩy vào kết nối đã chết
     netLog('app bị ẩn / khóa màn hình');
     try { stopPlayback(); } catch (e) {}
   }
@@ -1872,36 +1914,65 @@
     if (!S || S.ending || !S.hiddenAt) { keepAwake(); return; }
     var away = Date.now() - S.hiddenAt;
     S.hiddenAt = 0;
-    keepAwake();
-    try { if (S.outCtx && S.outCtx.state !== 'running') S.outCtx.resume(); } catch (e) {}
-    try { if (S.micCtx && S.micCtx.state !== 'running') S.micCtx.resume(); } catch (e) {}
+    if (away < 2000) { S.paused = false; keepAwake(); return; } // chỉ chớp màn hình, không sao
+    netLog('mở lại sau ' + Math.round(away / 1000) + ' s, chờ chạm để tiếp tục');
+    S.awayMs = away;
+    setStatus('Tạm dừng', 'warn', '');
+    setMascot('idle');
+    showResume('Buổi học đang tạm dừng', 'Màn hình vừa tắt hoặc bạn vừa chuyển app. Chạm để tiếp tục đúng chỗ đang học.');
+  }
+
+  function rebuildOut() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { S.outCtx.close(); } catch (e) {}
+    try { S.outCtx = new AC({ sampleRate: 24000 }); } catch (e) { S.outCtx = new AC(); }
+    try { S.outCtx.resume(); } catch (e) {}
+    try {
+      S.analyser = S.outCtx.createAnalyser();
+      S.analyser.fftSize = 256;
+      S.analyser.connect(S.outCtx.destination);
+      S.mouthBuf = new Uint8Array(S.analyser.fftSize);
+    } catch (e) { S.analyser = null; }
     S.nextTime = 0;
-    var track = S.stream && S.stream.getAudioTracks()[0];
-    var micDead = !track || track.readyState === 'ended' || track.muted;
-    netLog('mở lại sau ' + Math.round(away / 1000) + ' s' + (micDead ? ', bật lại micro' : '') + ', kết nối ' + (S.ws ? S.ws.readyState : 'không có'));
-    var p = Promise.resolve();
-    if (micDead) {
-      p = navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
-      }).then(function (stream) {
-        if (!S) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
-        try { S.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
-        try { S.micCtx.close(); } catch (e) {}
-        S.stream = stream;
-        return startMic();
-      });
-    }
-    p.then(function () {
+  }
+
+  function doResume() {
+    if (!S || S.ending || S.resuming) return;
+    S.resuming = true;
+    $('resumeBtn').disabled = true;
+    $('resumeBtn').textContent = 'Đang nối lại…';
+    rebuildOut(); // phải làm ngay trong lúc chạm thì iPhone mới cho phát tiếng
+    try { S.stream && S.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { S.micCtx && S.micCtx.close(); } catch (e) {}
+    withTimeout(navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }
+    }), 10000, 'Bật micro').then(function (stream) {
+      if (!S || S.ending) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+      S.stream = stream;
+      return withTimeout(startMic(), 6000, 'Khởi động micro');
+    }).then(function () {
       if (!S || S.ending) return;
-      var open = S.ws && S.ws.readyState === 1 && S.ready;
-      if (!open) { S.retries = 0; S.backNote = away > 20000; if (!S.ws || S.ws.readyState > 1) reconnect(); }
-      else if (away > 20000) sendText('[I stepped away for a moment and I am back now. Remind me in one sentence where we were, then continue.]');
-      refreshStatus();
+      // Kết nối cũ có thể đã chết mà vẫn báo "đang mở": bỏ hẳn, nối lại bằng mã phiên đã lưu.
+      var old = S.ws;
+      S.ws = null; S.ready = false;
+      try { if (old) old.close(); } catch (e) {}
+      S.retries = 0; S.backNote = (S.awayMs || 0) > 20000; S.resuming = false; S.paused = false; S.hiddenAt = 0;
+      S.aiTurnOpen = false; S.dropAudio = false; S.okAt = Date.now();
+      netLog('đã bật lại micro và loa, nối lại');
+      hideResume();
+      keepAwake();
+      reconnect();
     }).catch(function (e) {
       console.error(e);
-      setStatus('Micro chưa bật lại được', 'bad', 'Bấm "Kết thúc" để lưu buổi học rồi bắt đầu lại.');
+      if (S) S.resuming = false;
+      netLog('lỗi tiếp tục: ' + (e && e.message || e));
+      var name = e && e.name;
+      showResume('Chưa tiếp tục được', (name === 'NotAllowedError' ? 'Chưa có quyền micro. ' : (e && e.message ? e.message + '. ' : '')) +
+        'Bấm Thử lại, hoặc Kết thúc để lưu phần đã học.', 'Thử lại');
     });
   }
+  $('resumeBtn').addEventListener('click', doResume);
+  $('resumeEnd').addEventListener('click', function () { hideResume(); if (S) end(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden) onHidden(); else onVisible(); });
   window.addEventListener('pageshow', function () { if (!document.hidden) onVisible(); });
 
@@ -1909,6 +1980,7 @@
     if (!S) return;
     S.ending = true;
     clearInterval(S.tick); clearInterval(S.prepTimer);
+    hideResume();
     cancelAnimationFrame(S.raf);
     setMascot('idle');
     try { if (S.ws) S.ws.close(); } catch (e) {}

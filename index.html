@@ -2209,7 +2209,7 @@
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);
-        if (m && m[1] !== BUILD && !S && sessionStorage.getItem('reloaded') !== m[1]) {
+        if (m && m[1] !== BUILD && !document.body.classList.contains('in-session') && sessionStorage.getItem('reloaded') !== m[1]) {
           sessionStorage.setItem('reloaded', m[1]);
           location.replace(location.pathname + '?v=' + m[1]);
         }

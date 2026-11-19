@@ -634,7 +634,7 @@
         <div id="kidRow" class="hidden">
           <label for="kidName">Tên bé (giáo viên sẽ gọi tên này)</label>
           <input type="text" id="kidName" maxlength="30" autocomplete="off" placeholder="Ví dụ: Bin, Na, Su…">
-          <div class="tip">Chế độ cho bé tự dùng lời dạy riêng: nói chậm, xen tiếng Việt và tiếng Anh, không chê bé nói sai, chờ bé nói lâu hơn và chiều theo khi bé chen ngang. Bố mẹ nên ngồi cạnh bé.</div>
+          <div class="tip">Chế độ cho bé tự dùng lời dạy riêng: nói chậm, xen tiếng Việt và tiếng Anh, không chê bé nói sai, chờ bé nói lâu hơn và chiều theo khi bé chen ngang. Bố mẹ nên ngồi cạnh bé. Đây chỉ là giải trí nên không tính vào tiến độ, chuỗi ngày, lộ trình hay sổ từ của bạn.</div>
         </div>
       </section>
 
@@ -1433,7 +1433,7 @@
       '<p class="hfoot">Mỗi ngày ' + DAILY_GOAL + ' phút: một buổi nói chuyện chuyên môn, một buổi nghe, ôn lại sổ từ.</p>';
     order.forEach(function (x) { $('planList').appendChild(taskBtn(x, x === firstOpen)); });
     [
-      { k: 'kids', c: '🧒', title: 'Bé học nói (3 tuổi)', meta: 'Chơi và học cả tiếng Việt lẫn tiếng Anh', go: function () { goSpeak('kids'); } },
+      { k: 'kids', c: '🧒', title: 'Bé học nói (3 tuổi)', meta: 'Giải trí cho bé, không tính vào tiến độ học', go: function () { goSpeak('kids'); } },
       { k: 'patterns', c: '🔤', title: 'Câu mẫu và cấu trúc câu', meta: '500–1000 câu hay gặp, thay từ vào mẫu câu', go: function () { goSpeak('patterns'); } },
       { k: 'general', c: '💬', title: 'Trò chuyện có hướng dẫn', meta: 'Đời sống, công việc, du lịch, tin tức', go: function () { goSpeak('general'); } },
       { k: 'ielts', c: '🎯', title: 'Luyện IELTS Speaking', meta: 'Part 1, 2, 3 theo đúng dạng đề', go: function () { goSpeak('ielts'); } }
@@ -2337,7 +2337,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261119c';
+    var BUILD = 'b20261119d';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

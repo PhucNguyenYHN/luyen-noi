@@ -457,6 +457,22 @@
   select, input[type=text], input[type=password] { border-radius: 12px; background: var(--card); }
   .ghost, .pill { border-radius: 12px; font-weight: 600; }
   .sheet-body { border-radius: 22px 22px 0 0; }
+  /* Cài đặt: từng nhóm là một thẻ có tiêu đề nổi bật */
+  .sheet-body { background: var(--bg, var(--card-2)); max-width: 680px; }
+  .sheet-head { background: var(--bg, var(--card-2)); padding: 16px 0 12px; }
+  .sheet-head h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; }
+  .sheet-head h2 small { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 2px; }
+  .sheet section { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px 14px; margin: 12px 0; box-shadow: var(--shadow); }
+  .sheet section:last-child { border: 1px solid var(--line); }
+  .sheet h3 { display: flex; align-items: center; gap: 12px; text-transform: none; letter-spacing: 0; font-size: 1.12rem; font-weight: 800; color: var(--ink); margin: 0 0 6px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .sheet h3 .si { flex: none; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem; background: color-mix(in srgb, var(--sc, var(--brand)) 14%, var(--card)); }
+  .sheet h3 .st small { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-top: 1px; }
+  .sheet label { font-size: 0.92rem; font-weight: 700; color: var(--ink); margin: 14px 0 5px; }
+  .sheet label.check { font-weight: 600; }
+  .sheet select, .sheet input[type=text], .sheet input[type=number] { font-size: 1rem; padding: 11px 12px; }
+  .sheet .sub { margin: 18px 0 0; padding: 6px 10px; border-radius: 8px; background: var(--card-2); font-size: 0.74rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .sheet .tip { font-size: 0.82rem; line-height: 1.45; }
+
   /* Lộ trình */
   .nextcard { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); background: color-mix(in srgb, var(--brand) 5%, var(--card)); }
   .nextcard h3 { margin: 2px 0 4px; font-size: 1.15rem; }
@@ -488,7 +504,7 @@
     <div class="brand"><img src="icon-180-aipro.png" alt=""><h1>Luyện nói tiếng Anh</h1></div>
     <div class="right">
       <button id="installBtn" class="iconbtn hidden" aria-label="Cài app lên màn hình chính">📲 Cài</button>
-      <button id="gearBtn" class="iconbtn" aria-label="Mở menu">☰ Menu</button>
+      <button id="gearBtn" class="iconbtn" aria-label="Mở cài đặt">⚙️ Cài đặt</button>
     </div>
   </div>
 
@@ -536,12 +552,12 @@
   <div id="settings" class="sheet hidden" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="sheet-body">
       <div class="sheet-head">
-        <h2 id="setTitle">Menu</h2>
+        <h2 id="setTitle">Cài đặt<small>Chỉnh cách giáo viên dạy, giọng nói và giao diện</small></h2>
         <button id="setDone" class="done">Xong</button>
       </div>
 
       <section class="insession-only">
-        <h3>Trong buổi học</h3>
+        <h3 style="--sc:#2563eb"><span class="si">🎛️</span><span class="st">Trong buổi học<small>Công cụ dùng ngay khi đang nói</small></span></h3>
         <div class="tools" id="tools">
           <button id="prepBtn" class="hidden" title="Thời gian chuẩn bị IELTS Part 2">Chuẩn bị 1 phút</button>
           <button id="calBtn" class="hidden" title="Đo độ to giọng của bạn để lọc tiếng người khác">🎚️ Đo giọng của tôi</button>
@@ -556,7 +572,7 @@
       </section>
 
       <section id="logSec" class="hidden">
-        <h3>Hội thoại</h3>
+        <h3 style="--sc:#0d9488"><span class="si">💬</span><span class="st">Hội thoại<small>Xem lại những gì vừa nói</small></span></h3>
         <details class="logbox" id="logBox">
           <summary id="logSum">Xem toàn bộ hội thoại</summary>
           <div id="log"></div>
@@ -564,12 +580,12 @@
       </section>
 
       <section id="progressSec" class="setup-only hidden">
-        <h3>Tiến độ</h3>
+        <h3 style="--sc:#16a34a"><span class="si">📈</span><span class="st">Tiến độ<small>Số buổi, phút học, chuỗi ngày</small></span></h3>
         <div id="stats" class="stats"></div>
       </section>
 
       <section class="setup-only">
-        <h3>Bài học</h3>
+        <h3 style="--sc:#2563eb"><span class="si">📘</span><span class="st">Bài học<small>Học gì hôm nay</small></span></h3>
         <label for="mode">Chế độ</label>
         <select id="mode"></select>
         <label for="subMode">Nội dung</label>
@@ -584,30 +600,22 @@
       </section>
 
       <section id="kidTeachSec" class="setup-only hidden">
-        <h3>Cách giáo viên dạy</h3>
+        <h3 style="--sc:#7c3aed"><span class="si">🧑‍🏫</span><span class="st">Cách giáo viên dạy<small>Cách dạy riêng cho bé</small></span></h3>
         <div class="tip">Chế độ Bé học nói dùng cách dạy riêng cho trẻ 3 tuổi, nên tính cách, mức sửa lỗi và ngôn ngữ giảng được ẩn. Chọn chế độ khác ở mục Bài học để chỉnh lại các mục này.</div>
       </section>
 
-      <section id="noiseSec" class="setup-only">
-        <h3>Nhà ồn, nhiều người nói</h3>
-        <select id="noiseSel" aria-label="Chế độ nhà ồn">
-          <option value="off" selected>Tắt (nói tự do như bình thường)</option>
-          <option value="ptt">Bấm để nói: chỉ nghe khi tôi bấm 🎙️, chắc nhất</option>
-          <option value="gate">Lọc theo độ to: chỉ nhận giọng to như giọng tôi</option>
-        </select>
-        <div class="tip">Hai chế độ này cũng không cho tiếng bên ngoài cắt ngang lời giáo viên; muốn ngắt giáo viên thì chạm vào nhân vật. Dùng tai nghe có micro thì hiệu quả hơn nhiều. Chế độ lọc theo độ to cần bấm “Đo giọng của tôi” một lần trong buổi học (💬 Menu).</div>
-      </section>
-
       <section id="teachSec" class="setup-only">
-        <h3>Cách giáo viên dạy</h3>
-        <label for="personaSel">Tính cách</label>
+        <h3 style="--sc:#7c3aed"><span class="si">🧑‍🏫</span><span class="st">Cách giáo viên dạy<small>Tính cách, mức sửa lỗi, nhịp hội thoại</small></span></h3>
+        <div class="sub">Tính cách</div>
+        <label for="personaSel">Cách xưng hô và giọng điệu</label>
         <select id="personaSel">
           <option value="kind" selected>Hiền, tận tình (xưng mình – bạn)</option>
           <option value="sassy">Lầy lội, hay cà khịa (xưng tao – mày)</option>
           <option value="master">Ngoan, đáng yêu (xưng em – chủ nhân)</option>
           <option value="strict">Nghiêm khắc như cô luyện thi (xưng cô – em)</option>
         </select>
-        <label for="correctSel">Sửa lỗi</label>
+        <div class="sub">Sửa lỗi và phát âm</div>
+        <label for="correctSel">Sửa lỗi ngữ pháp</label>
         <select id="correctSel">
           <option value="now" selected>Tận tình: bắt từng lỗi, giải thích và cho nói lại</option>
           <option value="major">Chỉ sửa lỗi lớn</option>
@@ -620,7 +628,8 @@
           <option value="strict">Khắt khe: gần như người bản xứ (khoảng 90%)</option>
         </select>
         <div class="tip">Quyết định khi nào một từ hoặc câu được tính là đạt và cho nói lại mấy lần. Giáo viên không đo được phần trăm thật, con số chỉ là mốc khắt khe. Lỗi ngữ pháp vẫn theo mục “Sửa lỗi” phía trên.</div>
-        <label for="waitSel">Chờ tôi nói xong</label>
+        <div class="sub">Nhịp hội thoại</div>
+        <label for="waitSel">Chờ tôi nói xong mới trả lời</label>
         <select id="waitSel">
           <option value="fast">Nhanh: trả lời ngay khi tôi ngừng (hay nhảy vào khi tôi ngập ngừng)</option>
           <option value="normal">Vừa: chờ khoảng 2,5 giây</option>
@@ -629,7 +638,8 @@
           <option value="custom">Tự chọn số giây…</option>
         </select>
         <div id="waitSecRow" class="hidden" style="margin-top:6px"><input type="number" id="waitSec" min="1" max="20" step="0.5" value="5" inputmode="decimal" style="width:90px"> <span class="tip" style="display:inline">giây (1 đến 20)</span></div>
-        <label for="langSel">Ngôn ngữ giảng</label>
+        <div class="sub">Ngôn ngữ</div>
+        <label for="langSel">Ngôn ngữ giáo viên dùng để giảng</label>
         <select id="langSel">
           <option value="vi_much" selected>Song ngữ Việt – Anh</option>
           <option value="vi_some">Chủ yếu tiếng Anh, giải thích tiếng Việt khi khó</option>
@@ -638,7 +648,7 @@
       </section>
 
       <section class="setup-only">
-        <h3>Giọng nói</h3>
+        <h3 style="--sc:#ea580c"><span class="si">🔊</span><span class="st">Giọng nói<small>Giọng và tốc độ của giáo viên</small></span></h3>
         <label for="voiceSel">Giọng</label>
         <select id="voiceSel"></select>
         <label for="speedSel">Tốc độ</label>
@@ -649,8 +659,18 @@
         </select>
       </section>
 
+      <section id="noiseSec" class="setup-only">
+        <h3 style="--sc:#64748b"><span class="si">🔇</span><span class="st">Nhà ồn, nhiều người nói<small>Không để tiếng bên ngoài cắt ngang</small></span></h3>
+        <select id="noiseSel" aria-label="Chế độ nhà ồn">
+          <option value="off" selected>Tắt (nói tự do như bình thường)</option>
+          <option value="ptt">Bấm để nói: chỉ nghe khi tôi bấm 🎙️, chắc nhất</option>
+          <option value="gate">Lọc theo độ to: chỉ nhận giọng to như giọng tôi</option>
+        </select>
+        <div class="tip">Hai chế độ này cũng không cho tiếng bên ngoài cắt ngang lời giáo viên; muốn ngắt giáo viên thì chạm vào nhân vật. Dùng tai nghe có micro thì hiệu quả hơn nhiều. Chế độ lọc theo độ to cần bấm “Đo giọng của tôi” một lần trong buổi học (💬 Cài đặt).</div>
+      </section>
+
       <section class="setup-only">
-        <h3>Nhân vật</h3>
+        <h3 style="--sc:#db2777"><span class="si">🦉</span><span class="st">Nhân vật<small>Hình, tên và ảnh riêng</small></span></h3>
         <label>Chọn nhân vật (chạm vào nhân vật trên màn hình chính để trêu nó)</label>
         <div id="mascotGrid" class="mgrid"></div>
         <select id="mascotSel" class="hidden" aria-hidden="true" tabindex="-1"></select>
@@ -665,12 +685,12 @@
       </section>
 
       <section id="otherSec" class="setup-only">
-        <h3>Khác</h3>
+        <h3 style="--sc:#ca8a04"><span class="si">🧪</span><span class="st">Thử nghiệm<small>Tính năng đang thử</small></span></h3>
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
       </section>
 
       <section>
-        <h3>Giao diện</h3>
+        <h3 style="--sc:#0891b2"><span class="si">🎨</span><span class="st">Giao diện<small>Sáng, tối hoặc theo máy</small></span></h3>
         <div class="seg" id="themeSeg" role="group" aria-label="Chủ đề màu">
           <button type="button" data-th="light">☀️ Sáng</button>
           <button type="button" data-th="dark">🌙 Tối</button>
@@ -679,7 +699,7 @@
       </section>
 
       <section id="recentCard" class="hidden">
-        <h3>Các buổi gần đây</h3>
+        <h3 style="--sc:#64748b"><span class="si">🕘</span><span class="st">Các buổi gần đây<small>Mở lại tổng kết cũ</small></span></h3>
         <div class="recent" id="recent"></div>
       </section>
 
@@ -696,7 +716,7 @@
   <button type="button" data-v="speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Luyện nói</span></button>
   <button type="button" data-v="path"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg><span>Lộ trình</span></button>
   <button type="button" data-v="vocab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6"/></svg><span>Sổ từ</span></button>
-  <button type="button" data-v="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menu</span></button>
+  <button type="button" data-v="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Cài đặt</span></button>
 </nav>
 
 <div id="resumeBar" class="resume hidden" role="alertdialog" aria-labelledby="resumeTitle">
@@ -1117,7 +1137,7 @@
     booting = false;
     el.mainBtn.disabled = false;
     el.mainBtn.textContent = 'Thử lại';
-    el.bootMsg.textContent = 'Không tải được cài đặt: ' + (e && e.message || e) + '. Bấm "Thử lại" hoặc ☰ Menu.';
+    el.bootMsg.textContent = 'Không tải được cài đặt: ' + (e && e.message || e) + '. Bấm "Thử lại" hoặc ⚙️ Cài đặt.';
   });
   }
   loadBoot();

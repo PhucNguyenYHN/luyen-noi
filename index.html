@@ -2202,6 +2202,20 @@
   });
   window.addEventListener('beforeunload', function (ev) { if (S) { ev.preventDefault(); ev.returnValue = ''; } });
 })();
+
+  // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
+  (function () {
+    var BUILD = 'b20261119a';
+    try {
+      fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+        var m = /var BUILD = '([^']+)'/.exec(t);
+        if (m && m[1] !== BUILD && !S && sessionStorage.getItem('reloaded') !== m[1]) {
+          sessionStorage.setItem('reloaded', m[1]);
+          location.replace(location.pathname + '?v=' + m[1]);
+        }
+      }).catch(function () {});
+    } catch (e) {}
+  })();
 </script>
 </body>
 </html>

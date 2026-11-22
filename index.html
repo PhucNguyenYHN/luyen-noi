@@ -457,6 +457,12 @@
   select, input[type=text], input[type=password] { border-radius: 12px; background: var(--card); }
   .ghost, .pill { border-radius: 12px; font-weight: 600; }
   .sheet-body { border-radius: 22px 22px 0 0; }
+  .nethist .ne { border-top: 1px solid var(--line); padding: 8px 0; font-size: 0.84rem; }
+  .nethist .ne:first-child { border-top: 0; }
+  .nethist .ne b { display: block; font-size: 0.88rem; }
+  .nethist .ne code { display: block; white-space: pre-wrap; word-break: break-word; color: var(--muted); font: 12px/1.45 ui-monospace, Menlo, monospace; margin-top: 3px; }
+  .nethist .ne.bad b { color: var(--bad); } .nethist .ne.ok b { color: var(--ok); }
+
   /* Biểu đồ học hằng ngày và so với kế hoạch */
   .alertbar { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; margin: 0 0 12px; border: 1px solid; font-size: 0.92rem; line-height: 1.4; }
   .alertbar b { display: block; font-size: 0.98rem; margin-bottom: 2px; }
@@ -726,6 +732,13 @@
       <section id="otherSec" class="setup-only">
         <h3 style="--sc:#ca8a04"><span class="si">🧪</span><span class="st">Thử nghiệm<small>Tính năng đang thử</small></span></h3>
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
+      </section>
+
+      <section id="netSec">
+        <h3 style="--sc:#64748b"><span class="si">📡</span><span class="st">Nhật ký kết nối<small>Vì sao app bị ngắt hoặc treo</small></span></h3>
+        <div class="tip">Ghi lại 15 buổi gần nhất: lúc nào kết nối đóng, vì lý do gì (hết hạn mức Gemini, mất mạng, màn hình khóa…) và nối lại mất bao lâu.</div>
+        <div id="netHist" class="nethist"></div>
+        <button id="netCopy" class="ghost" type="button" style="margin-top:8px">Sao chép nhật ký</button>
       </section>
 
       <section>
@@ -1279,6 +1292,7 @@
     }
     $('settings').classList.remove('hidden');
     document.body.classList.add('sheet-open');
+    renderNetHist();
   }
   function closeSettings() {
     $('settings').classList.add('hidden');
@@ -1746,6 +1760,43 @@
   // ------------------------------------------------------------ WebSocket tới Gemini Live
 
   // Nhật ký kết nối: gửi kèm khi lưu buổi học (ghi cuối ô Bản ghi chữ) để tìm nguyên nhân rớt mạng.
+  // Nhật ký kết nối: lưu 15 buổi gần nhất trên máy để xem lại trong Cài đặt.
+  function friendlyClose(r) {
+    r = String(r || '');
+    if (/quota/i.test(r)) return 'Gemini báo hết hạn mức của gói miễn phí (' + r.slice(0, 40) + ')';
+    if (/unavailable/i.test(r)) return 'Máy chủ Gemini tạm quá tải hoặc cắt phiên dài (bình thường mỗi 10 phút)';
+    if (/^1006/.test(r)) return 'Mất kết nối đột ngột (thường do mạng)';
+    return r;
+  }
+  function saveNetHist() {
+    if (!S || !S.net || !S.net.length) return;
+    try {
+      var h = JSON.parse(localStorage.getItem('netHist') || '[]');
+      h.unshift({ t: Date.now(), mode: S.modeLabel || '', min: Math.round((Date.now() - S.startedAt) / 6000) / 10, log: S.net.slice(), ok: !!S.started });
+      localStorage.setItem('netHist', JSON.stringify(h.slice(0, 15)));
+    } catch (e) {}
+  }
+  function renderNetHist() {
+    var box = $('netHist'), h = [];
+    try { h = JSON.parse(localStorage.getItem('netHist') || '[]'); } catch (e) {}
+    if (!h.length) { box.innerHTML = '<p class="empty">Chưa có buổi nào được ghi. Sau buổi học đầu tiên, lịch sử sẽ hiện ở đây.</p>'; return; }
+    box.innerHTML = h.map(function (x) {
+      var quota = x.log.some(function (l) { return /quota/i.test(l); }), drop = x.log.some(function (l) { return /đóng|lỗi/.test(l); });
+      var cls = !x.ok ? 'bad' : (drop ? '' : 'ok');
+      var d = new Date(x.t);
+      return '<div class="ne ' + cls + '"><b>' + hEsc(d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' · ' + x.mode + ' · ' + x.min + ' phút' + (!x.ok ? ' · KHÔNG MỞ ĐƯỢC' : '') + (quota ? ' · có báo hết hạn mức' : '')) + '</b><code>' +
+        hEsc(x.log.join('\n')) + '</code></div>';
+    }).join('');
+  }
+  document.addEventListener('click', function (ev) {
+    if (ev.target && ev.target.id === 'netCopy') {
+      var h = ''; try { h = localStorage.getItem('netHist') || ''; } catch (e) {}
+      var txt = JSON.parse(h || '[]').map(function (x) { return new Date(x.t).toLocaleString('vi-VN') + ' ' + x.mode + ' ' + x.min + 'ph\n' + x.log.join('\n'); }).join('\n\n');
+      try { navigator.clipboard.writeText(txt); ev.target.textContent = 'Đã sao chép'; } catch (e) { ev.target.textContent = 'Không sao chép được'; }
+      setTimeout(function () { ev.target.textContent = 'Sao chép nhật ký'; }, 1800);
+    }
+  });
+
   function netLog(what) {
     if (!S) return;
     var t = Math.floor((Date.now() - S.startedAt) / 1000);
@@ -1793,6 +1844,7 @@
       S.ready = true;
       S.retries = 0;
       if (!S.started) {
+        netLog('mở phiên xong sau ' + Math.round((Date.now() - (S.clickAt || S.startedAt)) / 1000) + ' s kể từ lúc bấm' + (S.searchDropped ? ' (đã bỏ tra Google)' : ''));
         S.started = true;
         if (S.searchDropped) {
           var note = document.createElement('div');
@@ -1855,10 +1907,12 @@
     if (dropSearch) {
       delete S.setup.setup.tools;
       S.searchDropped = true;
+      netLog('bỏ tra Google rồi thử lại (có thể do tra Google bị giới hạn hạn mức); đã tắt tính năng này cho các buổi sau');
+      try { localStorage.setItem('search', '0'); $('searchChk').checked = false; } catch (e) {}
     }
     if (!dropSearch && !S.started) {
-      var why = 'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') +
-        '. Thường do hết hạn mức miễn phí trong ngày hoặc mạng chập chờn; thử lại sau ít phút.';
+      var why = 'Không mở được phiên Gemini Live' + (S.lastClose ? ': ' + friendlyClose(S.lastClose) : '') +
+        '. Thử lại sau ít phút; xem Cài đặt › Nhật ký kết nối để biết chi tiết.';
       cleanup();
       setStatus('Không kết nối được', 'bad', why);
       setIdleButton();
@@ -1867,10 +1921,10 @@
     if (!dropSearch && S.retries > 6) {
       stopPlayback();
       setStatus('Mất kết nối', 'bad', (S.started ? 'Bấm "Kết thúc" để lưu và xem tổng kết phần đã học.' :
-        'Không mở được phiên Gemini Live' + (S.lastClose ? ' (' + S.lastClose + ')' : '') + '. Kiểm tra LIVE_MODEL trong sheet Config và hạn mức gói miễn phí.'));
+        'Không mở được phiên Gemini Live' + (S.lastClose ? ': ' + friendlyClose(S.lastClose) : '') + '. Xem Cài đặt › Nhật ký kết nối; nếu là hết hạn mức thì chờ ít phút rồi thử lại.'));
       return;
     }
-    setStatus('Đang kết nối lại…', 'warn', S.lastClose ? 'Lý do: ' + S.lastClose : '');
+    setStatus('Đang kết nối lại…', 'warn', S.lastClose ? 'Lý do: ' + friendlyClose(S.lastClose) : '');
     setMascot('think');
     // Mã tạm của Gemini chỉ mở được MỘT phiên và hết hạn mở phiên sau 2 phút, nên lần nối lại nào cũng cần mã mới
     // (trừ khi vừa lấy sẵn lúc nhận goAway).
@@ -2058,7 +2112,7 @@
     setStatus('Đang kết nối…', 'warn', 'Xin quyền micro và mở phiên với giáo viên');
 
     S = {
-      ws: null, ready: false, started: false, ending: false, retries: 0, handle: null,
+      clickAt: Date.now(), ws: null, ready: false, started: false, ending: false, retries: 0, handle: null,
       playing: new Set(), nextTime: 0, muted: false, prepLeft: 0, prepTimer: null,
       open: { user: null, ai: null }, items: [], startedAt: Date.now(), modeLabel: '', tick: null
     };
@@ -2227,6 +2281,7 @@
 
   function cleanup() {
     if (!S) return;
+    saveNetHist();
     S.ending = true;
     clearInterval(S.tick); clearInterval(S.prepTimer);
     hideResume();
@@ -2337,7 +2392,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122a';
+    var BUILD = 'b20261122b';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

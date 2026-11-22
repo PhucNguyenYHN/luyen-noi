@@ -431,7 +431,7 @@
   .task.done .chip { background: var(--ok-soft); color: var(--ok); }
   .task.focus { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); background: color-mix(in srgb, var(--brand) 4%, var(--card)); }
   .task[data-k="cardio"] { --c: #2563eb; } .task[data-k="listening"] { --c: #ea580c; } .task[data-k="vocab"] { --c: #7c3aed; }
-  .task[data-k="path"] { --c: #4f46e5; } .task[data-k="friend"] { --c: #0d9488; } .task[data-k="kids"] { --c: #db2777; } .task[data-k="ielts"] { --c: #ca8a04; } .task[data-k="general"] { --c: #16a34a; }
+  .task[data-k="path"] { --c: #4f46e5; } .task[data-k="patterns"] { --c: #0891b2; } .task[data-k="friend"] { --c: #0d9488; } .task[data-k="kids"] { --c: #db2777; } .task[data-k="ielts"] { --c: #ca8a04; } .task[data-k="general"] { --c: #16a34a; }
   .ring-bg { stroke: color-mix(in srgb, var(--brand) 15%, transparent); }
   .ring-fg { stroke: var(--brand); transition: stroke-dashoffset .6s ease; }
   .ring-t { font-size: 13px; font-weight: 800; fill: var(--ink); }
@@ -1404,6 +1404,7 @@
     var vocabN = (boot.vocabList || []).length, seenVocab = false;
     try { seenVocab = localStorage.getItem('vocabSeen') === tKey; } catch (e) {}
     var plan = [
+      { k: 'patterns', c: 'C', title: 'Câu mẫu và cấu trúc câu', meta: 'Học khuôn câu rồi thay từ vào · 10 phút', done: !!doneM.patterns, go: function () { goSpeak('patterns'); } },
       { k: 'cardio', c: 'H', title: 'Công việc và hội nghị', meta: 'Giao tiếp bên lề hội nghị, trình bày ca bệnh · 15 phút', done: !!doneM.cardio, go: function () { goSpeak('cardio'); } },
       { k: 'listening', c: 'N', title: 'Luyện nghe hiểu', meta: 'Nghe bài nói hội nghị rồi trả lời · 10 phút', done: !!doneM.listening, go: function () { goSpeak('listening'); } },
       { k: 'vocab', c: 'T', title: 'Ôn sổ từ', meta: vocabN ? vocabN + ' từ · bấm để nghe phát âm · 5 phút' : 'Sổ từ còn trống, học một buổi là có từ', done: seenVocab || !vocabN, go: function () { setView('vocab'); } },
@@ -1434,7 +1435,6 @@
     order.forEach(function (x) { $('planList').appendChild(taskBtn(x, x === firstOpen)); });
     [
       { k: 'kids', c: '🧒', title: 'Bé học nói (3 tuổi)', meta: 'Giải trí cho bé, không tính vào tiến độ học', go: function () { goSpeak('kids'); } },
-      { k: 'patterns', c: '🔤', title: 'Câu mẫu và cấu trúc câu', meta: '500–1000 câu hay gặp, thay từ vào mẫu câu', go: function () { goSpeak('patterns'); } },
       { k: 'general', c: '💬', title: 'Trò chuyện có hướng dẫn', meta: 'Đời sống, công việc, du lịch, tin tức', go: function () { goSpeak('general'); } },
       { k: 'ielts', c: '🎯', title: 'Luyện IELTS Speaking', meta: 'Part 1, 2, 3 theo đúng dạng đề', go: function () { goSpeak('ielts'); } }
     ].forEach(function (x) { $('extraList').appendChild(taskBtn(x, false)); });
@@ -2337,7 +2337,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261119d';
+    var BUILD = 'b20261122a';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

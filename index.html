@@ -610,7 +610,7 @@
           <button id="slowBtn" title="Nhờ nói lại câu vừa rồi, chậm hơn">Nói chậm lại</button>
           <button id="transBtn" title="Nhờ dịch câu vừa rồi sang tiếng Việt">Dịch câu vừa rồi</button>
           <button id="hideBtn" title="Che chữ của giáo viên để luyện nghe; chạm vào từng câu để xem">Ẩn chữ giáo viên</button>
-          <button id="reviewBtn" title="Nhờ giáo viên ôn lại các lỗi và cụm từ của buổi này">Ôn lại (review)</button>
+          <button id="reviewBtn" title="Giáo viên hỏi lại các lỗi và cụm từ đã học để ôn tập">Ôn tập ngay</button>
         </div>
         <div class="tip">Đang trong buổi học nên phần cài đặt (bài học, giọng, nhân vật…) tạm ẩn. Bấm <b>Kết thúc</b> ở màn hình chính là các lựa chọn hiện lại.</div>
       </section>
@@ -2047,7 +2047,7 @@
       setStatus('Đã đo xong giọng của bạn', 'listen', 'Giờ chỉ tiếng to bằng giọng này mới được nhận.');
     }, 4000);
   });
-  el.reviewBtn.addEventListener('click', function () { sendText('review'); });
+  el.reviewBtn.addEventListener('click', function () { sendText('Please start a review round now: quiz me actively on what we practised today and on the earlier items, one at a time.'); });
   $('ideaBtn').addEventListener('click', function () {
     sendText('I am stuck for ideas. Give me two or three quick ideas of what I could say about this, each with an easy English sentence starter ' +
       'and a short Vietnamese hint, then ask me to pick one.');
@@ -2392,7 +2392,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122b';
+    var BUILD = 'b20261122c';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

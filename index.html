@@ -732,6 +732,7 @@
       <section id="otherSec" class="setup-only">
         <h3 style="--sc:#ca8a04"><span class="si">🧪</span><span class="st">Thử nghiệm<small>Tính năng đang thử</small></span></h3>
         <label class="check"><input type="checkbox" id="searchChk"> Cho tra tin tức mới qua Google (thử nghiệm)</label>
+        <div class="tip">⚠️ Bật mục này có thể tốn nhiều hạn mức (quota) của gói Gemini miễn phí, dễ gây báo hết hạn mức hoặc treo khi vào học. Chỉ bật khi thật sự cần tra tin mới; học bình thường nên để tắt.</div>
       </section>
 
       <section id="netSec">
@@ -1237,7 +1238,9 @@
       searchChk.checked = localStorage.getItem('search') === '1';
     } catch (e) {}
     correctSel.onchange = function () { try { localStorage.setItem('correct', correctSel.value); } catch (e) {} };
-    searchChk.onchange = function () { try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
+    searchChk.onchange = function () {
+      if (searchChk.checked && !confirm('Bật tra Google có thể tốn nhiều hạn mức (quota) của Gemini miễn phí và dễ làm buổi học bị treo hoặc báo hết hạn mức. Vẫn bật?')) searchChk.checked = false;
+      try { localStorage.setItem('search', searchChk.checked ? '1' : '0'); } catch (e) {} };
     // Các ô chọn đơn giản: nhớ lựa chọn trên từng thiết bị.
     ['langSel:lang', 'personaSel:persona', 'noiseSel:noisy', 'pronSel:pron', 'waitSel:wait'].forEach(function (pair) {
       var p = pair.split(':'), sel = $(p[0]), key = p[1];
@@ -2393,7 +2396,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122d';
+    var BUILD = 'b20261122e';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

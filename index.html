@@ -1957,7 +1957,8 @@
   // Tự "mời trả lời" sau khi người học im bao lâu: phải dài hơn thời gian chờ của máy chủ, nếu không sẽ nhảy vào lúc còn đang nghĩ.
   function nudgeDelay() { return { fast: 4000, slow: 9000, think: 9000 }[S.waitMode] || (S.waitMode === 'custom' ? Math.round(S.waitSec * 1000) + 4000 : 6500); }
   function autoNudge() {
-    if (!S || !S.ready || S.playing.size || S.muted || !S.lastUserAt) return;
+    // Chỉ dùng ở chế độ nhà ồn. Bình thường, khi bạn đang ngập ngừng giữa câu thì giáo viên phải chờ, không được mời trả lời thay.
+    if (!S || !S.ready || S.playing.size || S.muted || !S.lastUserAt || !S.noisy || S.noisy === 'off') return;
     var now = Date.now();
     if (S.lastUserAt <= (S.lastAiAt || 0) || now - S.lastUserAt < nudgeDelay()) return; // giáo viên đã trả lời, hoặc vừa mới nói xong
     if (S.nudgedAt && S.nudgedAt >= S.lastUserAt) return; // đã mời cho câu này rồi
@@ -2392,7 +2393,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122c';
+    var BUILD = 'b20261122d';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

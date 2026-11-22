@@ -1219,6 +1219,7 @@
     if (b.locked) { forgetAuth(); showLock(''); return; }
     hideLock();
     boot = b;
+    if (!window.__recovered) { window.__recovered = true; setTimeout(recoverPending, 2500); }
     el.mode.innerHTML = '';
     var voiceSel = $('voiceSel'), speedSel = $('speedSel');
     voiceSel.innerHTML = '';
@@ -2120,6 +2121,7 @@
       playing: new Set(), nextTime: 0, muted: false, prepLeft: 0, prepTimer: null,
       open: { user: null, ai: null }, items: [], startedAt: Date.now(), modeLabel: '', tick: null
     };
+    S.ckpt = setInterval(saveCkpt, 8000);
     // Tạo AudioContext ngay trong lúc bấm nút để trình duyệt cho phép phát tiếng.
     try { S.outCtx = new AC({ sampleRate: 24000 }); } catch (e) { S.outCtx = new AC(); }
     S.outCtx.resume();
@@ -2297,6 +2299,7 @@
     try { if (S.micCtx) S.micCtx.close(); } catch (e) {}
     try { if (S.outCtx) S.outCtx.close(); } catch (e) {}
     try { if (S.wake) S.wake.release(); } catch (e) {}
+    try { if (S.ckpt) clearInterval(S.ckpt); } catch (e) {}
     S = null;
     document.body.classList.remove('in-session');
     ['muteBtn', 'toolsBtn'].forEach(function (id) { $(id).classList.add('ghostspace'); });
@@ -2305,6 +2308,41 @@
     $('bars').classList.add('hidden');
     showLevel(0, 'listen');
     el.setupCard.classList.remove('hidden');
+  }
+
+  // Lưu tạm buổi học đang dở vào máy: nếu tắt app, mất mạng hay điện thoại tự đóng trang thì lần mở sau vẫn tổng kết và lưu được.
+  function saveCkpt() {
+    if (!S || !S.items || !S.items.length) return;
+    try {
+      localStorage.setItem('pendingSession', JSON.stringify({
+        modeLabel: S.modeLabel, unitId: S.unitId || '', topic: el.topic.value,
+        durationSec: Math.round((Date.now() - S.startedAt) / 1000),
+        transcript: S.items.map(function (it) { return { role: it.role, text: it.text }; }),
+        netLog: S.net || [], at: Date.now()
+      }));
+    } catch (e) {}
+  }
+  window.addEventListener('pagehide', saveCkpt);
+  function recoverPending() {
+    var raw = null, p = null;
+    try { raw = localStorage.getItem('pendingSession'); } catch (e) {}
+    if (!raw || S) return;
+    try { p = JSON.parse(raw); } catch (e) { p = null; }
+    var turns = p && p.transcript ? p.transcript.filter(function (t) { return t && t.role === 'user' && t.text; }).length : 0;
+    if (!p || turns < 2 || Date.now() - (p.at || 0) > 3 * 86400000) { try { localStorage.removeItem('pendingSession'); } catch (e) {} return; }
+    setStatus('Đang lưu buổi học trước bị gián đoạn…', 'warn', 'App tự tổng kết phần đã học');
+    p.auth = auth;
+    server('finishSession', p).then(function (res) {
+      if (res && res.saved) { try { localStorage.removeItem('pendingSession'); } catch (e) {} }
+      renderSummary(res);
+      setStatus(res && res.saved ? 'Đã lưu buổi học trước bị gián đoạn' : 'Chưa lưu được buổi học trước, sẽ thử lại lần sau', res && res.saved ? 'listen' : 'bad', '');
+      return server('getBootstrap', auth).then(function (b) {
+        if (b.locked) return;
+        renderRecent(b.recent); renderStats(b.stats);
+        boot.stats = b.stats; boot.recent = b.recent; boot.vocabList = b.vocabList; if (b.roadmap) boot.roadmap = b.roadmap;
+        renderVocab();
+      });
+    }).catch(function () {});
   }
 
   function end() {
@@ -2325,6 +2363,7 @@
     server('finishSession', payload).then(function (res) {
       if (res.roadmap) { boot.roadmap = res.roadmap; if (VIEW === 'path') renderPath(); }
       renderSummary(res);
+      if (res.saved) { try { localStorage.removeItem('pendingSession'); } catch (e) {} }
       setStatus(res.saved ? 'Đã lưu buổi học' : 'Chưa lưu được buổi học', res.saved ? 'listen' : 'bad', '');
       return server('getBootstrap', auth).then(function (b) {
         if (b.locked) return;
@@ -2396,7 +2435,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122e';
+    var BUILD = 'b20261122f';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

@@ -2157,7 +2157,7 @@
       $('bars').classList.remove('hidden');
       el.prepBtn.classList.toggle('hidden', req.mode !== 'ielts');
       ['transBtn', 'hideBtn', 'reviewBtn'].forEach(function (id) { $(id).classList.toggle('hidden', !!info.kids); });
-      setHideAi(req.mode === 'listening');
+      setHideAi(req.mode === 'listening' || req.mode === 'passive');
       el.mainBtn.disabled = false;
       el.mainBtn.classList.add('on');
       el.mainBtn.textContent = 'Kết thúc';
@@ -2329,7 +2329,8 @@
     if (!raw || S) return;
     try { p = JSON.parse(raw); } catch (e) { p = null; }
     var turns = p && p.transcript ? p.transcript.filter(function (t) { return t && t.role === 'user' && t.text; }).length : 0;
-    if (!p || turns < 2 || Date.now() - (p.at || 0) > 3 * 86400000) { try { localStorage.removeItem('pendingSession'); } catch (e) {} return; }
+    var passive = p && /Nghe thụ động/.test(String(p.modeLabel || '')) && p.transcript && p.transcript.length >= 4;
+    if (!p || (turns < 2 && !passive) || Date.now() - (p.at || 0) > 3 * 86400000) { try { localStorage.removeItem('pendingSession'); } catch (e) {} return; }
     setStatus('Đang lưu buổi học trước bị gián đoạn…', 'warn', 'App tự tổng kết phần đã học');
     p.auth = auth;
     server('finishSession', p).then(function (res) {
@@ -2435,7 +2436,7 @@
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261122f';
+    var BUILD = 'b20261125a';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);

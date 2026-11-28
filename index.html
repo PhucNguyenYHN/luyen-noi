@@ -585,6 +585,19 @@
     <div id="meter" class="hidden"><i></i></div>
   </div>
 
+  <div class="card hidden" id="passiveCard">
+    <h2 id="pTitle"></h2>
+    <div id="pSit" class="tip"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+      <button id="pAgain" class="ghost" title="Nghe lại hội thoại từ đầu">⏮ Từ đầu</button>
+      <button id="pPlay" class="ghost" title="Tạm dừng hoặc tiếp tục">⏯ Dừng/Tiếp</button>
+      <button id="pSlow" class="ghost" title="Phát chậm hơn một chút">🐢 Chậm</button>
+      <button id="pNext" class="ghost" title="Soạn bài nghe mới">⏭ Bài tiếp</button>
+    </div>
+    <audio id="pAudio" preload="auto"></audio>
+    <details><summary>Xem chữ (nên nghe xong rồi mới xem)</summary><pre id="pText" style="white-space:pre-wrap;font:inherit"></pre></details>
+  </div>
+
   <div class="card hidden" id="summaryCard">
     <h2>Tổng kết buổi học</h2>
     <div id="summary"></div>
@@ -2329,7 +2342,7 @@
     if (!raw || S) return;
     try { p = JSON.parse(raw); } catch (e) { p = null; }
     var turns = p && p.transcript ? p.transcript.filter(function (t) { return t && t.role === 'user' && t.text; }).length : 0;
-    var passive = p && /Nghe thụ động/.test(String(p.modeLabel || '')) && p.transcript && p.transcript.length >= 4;
+    var passive = p && /Nghe thụ động/.test(String(p.modeLabel || '')) && p.transcript && p.transcript.reduce(function (n, t) { return n + String(t.text || '').length; }, 0) >= 300;
     if (!p || (turns < 2 && !passive) || Date.now() - (p.at || 0) > 3 * 86400000) { try { localStorage.removeItem('pendingSession'); } catch (e) {} return; }
     setStatus('Đang lưu buổi học trước bị gián đoạn…', 'warn', 'App tự tổng kết phần đã học');
     p.auth = auth;
@@ -2357,6 +2370,133 @@
       netLog: S.net || []
     };
     cleanup();
+    submitSession(payload);
+  }
+
+  // ---- Nghe thụ động: bài làm sẵn thành file âm thanh (không dùng phiên trò chuyện), khóa màn hình vẫn nghe tiếp
+  var P = null;
+  var P_NAMES = ['Hội thoại', 'Phân tích từng câu (phần 1)', 'Phân tích từng câu (phần 2)', 'Nghe lại cả hội thoại'];
+
+  function pcmToWavUrl(b64) {
+    var bin = atob(b64), n = bin.length, bytes = new Uint8Array(n);
+    for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
+    if (!(bytes[0] === 82 && bytes[1] === 73 && bytes[2] === 70 && bytes[3] === 70)) { // không có đầu WAV: ghép đầu 24 kHz, 16 bit, mono
+      var h = new DataView(new ArrayBuffer(44)), w = function (o, s) { for (var k = 0; k < s.length; k++) h.setUint8(o + k, s.charCodeAt(k)); };
+      w(0, 'RIFF'); h.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, 1, true);
+      h.setUint32(24, 24000, true); h.setUint32(28, 48000, true); h.setUint16(32, 2, true); h.setUint16(34, 16, true); w(36, 'data'); h.setUint32(40, n, true);
+      var all = new Uint8Array(44 + n); all.set(new Uint8Array(h.buffer), 0); all.set(bytes, 44); bytes = all;
+    }
+    var url = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }));
+    P.urls.push(url);
+    return url;
+  }
+
+  function startPassive() {
+    setView('speak');
+    closeSettings();
+    el.summaryCard.classList.add('hidden');
+    P = { startedAt: Date.now(), texts: [], prev: [], urls: [], modeLabel: '', slow: false, qi: 0, queue: [0, 1, 2, 0], parts: [], gen: 0 };
+    newLesson();
+  }
+
+  function saveCkptP() {
+    if (!P || !P.texts.length) return;
+    try {
+      localStorage.setItem('pendingSession', JSON.stringify({
+        modeLabel: P.modeLabel, unitId: '', topic: el.topic.value, durationSec: Math.round((Date.now() - P.startedAt) / 1000),
+        transcript: [{ role: 'ai', text: P.texts.join('\n\n=====\n\n') }], netLog: [], at: Date.now()
+      }));
+    } catch (e) {}
+  }
+
+  function newLesson() {
+    var gen = ++P.gen, a = $('pAudio');
+    try { a.pause(); } catch (e) {}
+    el.mainBtn.disabled = true;
+    setStatus('Đang soạn bài nghe…', 'warn', 'Mất khoảng 30–60 giây. Bài nghe này không cần trò chuyện nên bạn có thể khóa màn hình.');
+    var subTxt = el.subMode.options[el.subMode.selectedIndex] ? el.subMode.options[el.subMode.selectedIndex].text : '';
+    P.modeLabel = 'Nghe thụ động (bài giảng) — ' + subTxt;
+    server('listenLesson', { auth: auth, sub: el.subMode.value, topic: el.topic.value, prev: P.prev }).then(function (ls) {
+      if (!P || gen !== P.gen) return;
+      P.ls = ls; P.prev.push(ls.title); P.texts.push(ls.text); P.qi = 0; P.parts = [];
+      saveCkptP();
+      $('passiveCard').classList.remove('hidden');
+      idleCaption('Nghe thụ động: chỉ cần nghe và ngẫm');
+      $('pTitle').textContent = ls.title;
+      $('pSit').textContent = ls.situation;
+      $('pText').textContent = ls.text;
+      el.mainBtn.disabled = false; el.mainBtn.classList.add('on'); el.mainBtn.textContent = 'Kết thúc và lưu';
+      [0, 1, 2].forEach(function (i) { P.parts[i] = loadPart(i, ls.id, gen, 0); });
+      playIdx(0);
+    }).catch(function (e) {
+      if (!P || gen !== P.gen) return;
+      setStatus('Chưa soạn được bài nghe', 'bad', (e && e.message || String(e)) + ' Bấm "Bài tiếp" để thử lại.');
+      $('passiveCard').classList.remove('hidden');
+      el.mainBtn.disabled = false;
+      if (P.texts.length) { el.mainBtn.classList.add('on'); el.mainBtn.textContent = 'Kết thúc và lưu'; } else { P = null; $('passiveCard').classList.add('hidden'); setIdleButton(); }
+    });
+  }
+
+  function loadPart(i, id, gen, tries) {
+    return server('listenAudio', { auth: auth, id: id, part: i }).then(function (r) {
+      return pcmToWavUrl(r.data);
+    }).catch(function (e) {
+      if (tries < 2 && P && gen === P.gen) return new Promise(function (ok) { setTimeout(ok, 6000 + 4000 * tries); }).then(function () { return loadPart(i, id, gen, tries + 1); });
+      throw e;
+    });
+  }
+
+  function playIdx(qi) {
+    if (!P || !P.ls) return;
+    var gen = P.gen, part = P.queue[qi], a = $('pAudio');
+    P.qi = qi;
+    setStatus('Đang tải: ' + P_NAMES[qi], 'warn', P.ls.title);
+    P.parts[part].then(function (url) {
+      if (!P || gen !== P.gen || P.qi !== qi) return;
+      a.src = url;
+      a.playbackRate = P.slow ? 0.8 : 1;
+      var pr = a.play();
+      setStatus(P_NAMES[qi], 'listen', P.ls.title + (qi === 0 ? ' · Chỉ cần nghe, đừng đọc chữ' : ''));
+      if (pr && pr.catch) pr.catch(function () { setStatus('Chạm ▶ để nghe', 'warn', P_NAMES[qi]); });
+      try {
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = new MediaMetadata({ title: P.ls.title, artist: P_NAMES[qi], album: 'Nghe thụ động' });
+          navigator.mediaSession.setActionHandler('play', function () { a.play(); });
+          navigator.mediaSession.setActionHandler('pause', function () { a.pause(); });
+        }
+      } catch (e) {}
+    }).catch(function (e) {
+      if (!P || gen !== P.gen) return;
+      setStatus('Chưa tạo được giọng đọc cho phần này', 'bad', (e && e.message || String(e)) + ' Bấm ⏮ để thử lại.');
+      P.parts[part] = loadPart(part, P.ls.id, gen, 1);
+    });
+  }
+
+  function endPassive() {
+    var a = $('pAudio');
+    try { a.pause(); } catch (e) {}
+    var payload = {
+      auth: auth, modeLabel: P.modeLabel, unitId: '', topic: el.topic.value,
+      durationSec: Math.round((Date.now() - P.startedAt) / 1000),
+      transcript: [{ role: 'ai', text: P.texts.join('\n\n=====\n\n') }], netLog: []
+    };
+    P.urls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) {} });
+    P = null;
+    a.removeAttribute('src');
+    $('passiveCard').classList.add('hidden');
+    submitSession(payload);
+  }
+
+  (function wirePassive() {
+    var a = $('pAudio');
+    a.addEventListener('ended', function () { if (P && P.qi + 1 < P.queue.length) playIdx(P.qi + 1); else if (P) setStatus('Hết bài', 'listen', 'Bấm ⏭ Bài tiếp để nghe bài mới, hoặc Kết thúc và lưu'); });
+    $('pPlay').addEventListener('click', function () { if (a.src) { if (a.paused) a.play(); else a.pause(); } });
+    $('pAgain').addEventListener('click', function () { if (P && P.ls) playIdx(0); });
+    $('pSlow').addEventListener('click', function () { if (!P) return; P.slow = !P.slow; a.playbackRate = P.slow ? 0.8 : 1; $('pSlow').classList.toggle('active', P.slow); });
+    $('pNext').addEventListener('click', function () { if (P) newLesson(); });
+  })();
+
+  function submitSession(payload) {
     el.mainBtn.disabled = true;
     el.mainBtn.classList.remove('on');
     el.mainBtn.textContent = 'Đang lưu…';
@@ -2428,15 +2568,16 @@
 
   el.mainBtn.addEventListener('click', function () {
     if (S) { end(); return; }
+    if (P) { endPassive(); return; }
     if (!boot) { el.mainBtn.disabled = true; el.mainBtn.textContent = 'Đang tải…'; loadBoot(); return; }
-    start();
+    if (el.mode.value === 'passive') startPassive(); else start();
   });
-  window.addEventListener('beforeunload', function (ev) { if (S) { ev.preventDefault(); ev.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (ev) { if (S || P) { ev.preventDefault(); ev.returnValue = ''; } });
 })();
 
   // Tự cập nhật: nếu trang trên máy chủ mới hơn bản đang giữ trong bộ nhớ, tải lại một lần.
   (function () {
-    var BUILD = 'b20261125a';
+    var BUILD = 'b20261128a';
     try {
       fetch(location.pathname + '?chk=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
         var m = /var BUILD = '([^']+)'/.exec(t);
